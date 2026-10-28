@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "plant-doctor"
+version = "0.1.0"
+description = "Chẩn đoán bệnh lá cây: YOLOv8 + Local RAG (FAISS + Embedding + Qwen2.5 LoRA), 100% offline"
+readme = "README.md"
+requires-python = ">=3.10"
+# torch: dùng bản có sẵn trên Colab; máy local cài theo hướng dẫn tại https://pytorch.org
+dependencies = [
+    "ultralytics>=8.2",
+    "transformers>=4.44",
+    "peft>=0.12",
+    "accelerate>=0.33",
+    "datasets>=2.20",
+    "sentence-transformers>=3.0",
+    "langchain-core>=0.3",
+    "langchain-community>=0.3",
+    "langchain-huggingface>=0.1",
+    "langchain-text-splitters>=0.3",
+    "faiss-cpu>=1.8",
+    "pypdf>=4.0",
+    "opencv-python-headless>=4.8",
+    "pyyaml",
+    "pillow",
+    "tqdm",
+    "streamlit>=1.36",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+# Lệnh tắt cho từng bước pipeline (tương đương `python -m plant_doctor....`)
+[project.scripts]
+pd-prepare-dataset = "plant_doctor.data.prepare_dataset:main"
+pd-train-yolo = "plant_doctor.training.train_yolo:main"
+pd-train-embedding = "plant_doctor.training.train_embedding:main"
+pd-train-llm = "plant_doctor.training.train_llm:main"
+pd-build-index = "plant_doctor.rag.build_index:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+# Bộ quy tắc cơ bản (pycodestyle + pyflakes). Có thể bật thêm "I", "B", "UP"
+# rồi chạy `ruff check --fix .` để tự sửa.
+select = ["E", "F", "W"]
+ignore = ["E402"]  # app đặt biến môi trường offline trước khi import thư viện
+

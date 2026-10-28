@@ -1,0 +1,22 @@
+# torch: dùng bản có sẵn trên Colab; máy local cài theo hướng dẫn tại https://pytorch.org
+ultralytics>=8.2
+transformers>=4.44
+peft>=0.12
+accelerate>=0.33
+datasets>=2.20
+sentence-transformers>=3.0
+langchain-core>=0.3
+langchain-community>=0.3
+langchain-huggingface>=0.1
+langchain-text-splitters>=0.3
+faiss-cpu>=1.8
+pypdf>=4.0
+opencv-python-headless>=4.8
+pyyaml
+pillow
+tqdm
+streamlit>=1.36
+requests==2.32.4
+
+# Cài package plant_doctor (src/) ở chế độ editable
+-e .

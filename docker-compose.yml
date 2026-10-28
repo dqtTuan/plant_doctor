@@ -1,0 +1,19 @@
+# Chạy app (CPU):   docker compose up -d
+# Chạy app (GPU):   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+# Dùng image từ GHCR thay vì build local:
+#   IMAGE=ghcr.io/<owner>/<repo> docker compose pull && docker compose up -d
+services:
+  app:
+    image: ${IMAGE:-plant-doctor}:${TAG:-latest}
+    build:
+      context: .
+    ports:
+      - "${PORT:-8501}:8501"
+    volumes:
+      # Mô hình & chỉ mục được mount từ máy chủ (không đóng gói trong image)
+      - ./models:/app/models:ro
+      - ./vector_store:/app/vector_store:ro
+      # Cập nhật kho tri thức không cần build lại image
+      - ./data/knowledge_base:/app/data/knowledge_base:ro
+    restart: unless-stopped
+

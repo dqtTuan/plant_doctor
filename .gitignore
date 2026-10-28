@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Dữ liệu (chỉ theo dõi kho tri thức)
+data/*
+!data/knowledge_base/
+!data/README.md
+
+# Mô hình & chỉ mục sinh ra khi train
+models/*
+!models/README.md
+vector_store/
+runs/
+
+# Khác
+*.log
+.env

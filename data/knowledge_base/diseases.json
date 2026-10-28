@@ -1,0 +1,549 @@
+[
+  {
+    "key": "healthy",
+    "aliases": [
+      "khoe manh",
+      "normal"
+    ],
+    "crop_vi": "Cây trồng nói chung",
+    "crop_en": "General crops",
+    "name_vi": "Lá khỏe mạnh",
+    "name_en": "Healthy",
+    "pathogen": "Không phát hiện tác nhân gây bệnh",
+    "symptoms": "Phiến lá xanh đều màu, không có đốm, vết cháy, lớp phấn hay biến dạng bất thường.",
+    "causes": "Cây đang sinh trưởng tốt; tuy vậy mầm bệnh có thể xuất hiện khi thời tiết ẩm kéo dài hoặc cây thiếu dinh dưỡng.",
+    "bio_treatment": "Không cần điều trị. Duy trì bón phân hữu cơ hoai mục, bổ sung chế phẩm vi sinh (Trichoderma, Bacillus) vào đất để tăng sức đề kháng.",
+    "chemical_note": "Không sử dụng thuốc bảo vệ thực vật khi cây khỏe để bảo vệ thiên địch và tránh tồn dư.",
+    "prevention": "Kiểm tra vườn định kỳ 1-2 lần mỗi tuần, tỉa cành tạo độ thông thoáng, tưới vào gốc thay vì tưới lên lá, vệ sinh dụng cụ và luân canh cây trồng."
+  },
+  {
+    "key": "apple_apple_scab",
+    "aliases": [
+      "Apple___Apple_scab",
+      "apple scab",
+      "ghe tao"
+    ],
+    "crop_vi": "Táo",
+    "crop_en": "Apple",
+    "name_vi": "Bệnh ghẻ táo",
+    "name_en": "Apple scab",
+    "pathogen": "Nấm Venturia inaequalis",
+    "symptoms": "Đốm màu xanh ô liu đến nâu đen, bề mặt mịn như nhung trên mặt lá; lá vàng, xoăn và rụng sớm; quả có vết ghẻ sần sùi, nứt nẻ.",
+    "causes": "Nấm qua đông trên lá rụng, phát tán bào tử vào mùa xuân khi trời mát và mưa ẩm kéo dài.",
+    "bio_treatment": "Thu gom và tiêu hủy hoặc ủ hoai lá rụng; phun chế phẩm Bacillus subtilis lên tán lá; dung dịch lưu huỳnh vôi được phép dùng trong canh tác hữu cơ khi bệnh mới chớm.",
+    "chemical_note": "Chỉ dùng thuốc gốc captan hoặc mancozeb khi áp lực bệnh cao, luân phiên hoạt chất và tuân thủ thời gian cách ly.",
+    "prevention": "Trồng giống kháng bệnh, tỉa cành cho tán thông thoáng, tránh tưới phun mưa lên lá vào chiều tối."
+  },
+  {
+    "key": "apple_black_rot",
+    "aliases": [
+      "Apple___Black_rot",
+      "thoi den tao"
+    ],
+    "crop_vi": "Táo",
+    "crop_en": "Apple",
+    "name_vi": "Bệnh thối đen",
+    "name_en": "Black rot",
+    "pathogen": "Nấm Botryosphaeria obtusa (Diplodia seriata)",
+    "symptoms": "Trên lá có đốm tròn kiểu mắt ếch, tâm nâu nhạt, viền tím; quả thối nâu đen với các vòng đồng tâm rồi khô teo thành quả ướp; cành có vết loét.",
+    "causes": "Nấm tồn tại trên cành khô, vết loét và quả ướp còn sót trên cây; lây lan mạnh khi thời tiết ấm và mưa nhiều, xâm nhập qua vết thương.",
+    "bio_treatment": "Cắt bỏ cành chết, cành loét và quả ướp rồi tiêu hủy xa vườn; phun chế phẩm Bacillus subtilis; có thể dùng thuốc gốc đồng liều thấp lúc chồi ngủ.",
+    "chemical_note": "Thuốc gốc captan có thể dùng khi bệnh nặng, luân phiên hoạt chất để tránh kháng thuốc.",
+    "prevention": "Vệ sinh vườn sau thu hoạch, hạn chế gây vết thương cho cây, bón phân cân đối để cây khỏe."
+  },
+  {
+    "key": "apple_cedar_apple_rust",
+    "aliases": [
+      "Apple___Cedar_apple_rust",
+      "cedar apple rust",
+      "gi sat tao"
+    ],
+    "crop_vi": "Táo",
+    "crop_en": "Apple",
+    "name_vi": "Bệnh gỉ sắt tuyết tùng – táo",
+    "name_en": "Cedar apple rust",
+    "pathogen": "Nấm Gymnosporangium juniperi-virginianae (cần ký chủ trung gian là cây bách xù Juniperus)",
+    "symptoms": "Đốm vàng cam sáng màu ở mặt trên lá, về sau mặt dưới đốm mọc các cấu trúc hình chén hoặc tua chứa bào tử; lá có thể rụng sớm.",
+    "causes": "Bào tử phát tán từ các u sần trên cây bách xù gần vườn vào mùa xuân mưa ẩm.",
+    "bio_treatment": "Loại bỏ cây bách xù quanh vườn hoặc cắt bỏ các u sần trên bách xù; phun lưu huỳnh phòng bệnh từ giai đoạn nụ hoa hồng đến sau rụng cánh hoa.",
+    "chemical_note": "Thuốc nhóm triazole (ví dụ myclobutanil) chỉ dùng khi vườn có lịch sử bệnh nặng.",
+    "prevention": "Chọn giống táo kháng gỉ sắt, không trồng bách xù gần vườn táo."
+  },
+  {
+    "key": "cherry_including_sour_powdery_mildew",
+    "aliases": [
+      "Cherry_(including_sour)___Powdery_mildew",
+      "cherry powdery mildew",
+      "phan trang anh dao"
+    ],
+    "crop_vi": "Anh đào",
+    "crop_en": "Cherry",
+    "name_vi": "Bệnh phấn trắng",
+    "name_en": "Powdery mildew",
+    "pathogen": "Nấm Podosphaera clandestina",
+    "symptoms": "Lớp phấn trắng xám phủ trên lá non và chồi; lá cong, xoăn mép, sinh trưởng kém; quả có thể bị phủ phấn.",
+    "causes": "Phát triển mạnh khi ẩm độ không khí cao, nhiệt độ ấm, tán cây rậm rạp; không cần nước mưa đọng trên lá.",
+    "bio_treatment": "Phun lưu huỳnh, kali bicarbonate, dầu neem hoặc dầu khoáng; chế phẩm Bacillus subtilis; cắt bỏ chồi bị bệnh nặng.",
+    "chemical_note": "Thuốc nhóm triazole hoặc strobilurin chỉ dùng khi bệnh lan rộng, luân phiên hoạt chất.",
+    "prevention": "Tỉa cành thông thoáng, tránh bón thừa đạm, theo dõi sớm trên chồi non đầu mùa."
+  },
+  {
+    "key": "corn_maize_cercospora_leaf_spot_gray_leaf_spot",
+    "aliases": [
+      "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot",
+      "gray leaf spot",
+      "dom la xam ngo"
+    ],
+    "crop_vi": "Ngô",
+    "crop_en": "Corn",
+    "name_vi": "Bệnh đốm lá xám",
+    "name_en": "Cercospora / Gray leaf spot",
+    "pathogen": "Nấm Cercospora zeae-maydis",
+    "symptoms": "Vết bệnh hình chữ nhật hẹp, màu xám nâu, chạy song song và bị giới hạn bởi gân lá; nặng thì các vết liên kết làm lá cháy khô.",
+    "causes": "Nấm tồn tại trên tàn dư thân lá ngô; bùng phát khi ẩm độ cao, sương mù kéo dài và trồng ngô liên tục.",
+    "bio_treatment": "Cày vùi hoặc ủ tàn dư với chế phẩm Trichoderma; luân canh với cây họ đậu; trồng mật độ hợp lý để ruộng thông thoáng.",
+    "chemical_note": "Thuốc nhóm strobilurin hoặc triazole chỉ cân nhắc khi bệnh leo lên lá trên trước giai đoạn trổ cờ ở giống mẫn cảm.",
+    "prevention": "Sử dụng giống kháng, luân canh ít nhất một vụ, xử lý tàn dư sau thu hoạch."
+  },
+  {
+    "key": "corn_maize_common_rust",
+    "aliases": [
+      "Corn_(maize)___Common_rust_",
+      "common rust",
+      "gi sat ngo"
+    ],
+    "crop_vi": "Ngô",
+    "crop_en": "Corn",
+    "name_vi": "Bệnh gỉ sắt",
+    "name_en": "Common rust",
+    "pathogen": "Nấm Puccinia sorghi",
+    "symptoms": "Ổ bào tử nhỏ hình bầu dục, màu nâu đỏ, nổi gồ trên cả hai mặt lá; chạm vào thấy bột màu gỉ sắt; về cuối vụ ổ bào tử chuyển nâu đen.",
+    "causes": "Bào tử phát tán theo gió; phát triển mạnh khi trời mát (16-23°C) và ẩm độ cao, có sương.",
+    "bio_treatment": "Gieo trồng đúng thời vụ, bón phân cân đối (tránh thừa đạm), tiêu hủy lá bệnh nặng; ở mức nhẹ thường không cần dùng thuốc.",
+    "chemical_note": "Chỉ dùng thuốc nhóm triazole hoặc strobilurin khi bệnh xuất hiện sớm và nặng trên giống mẫn cảm.",
+    "prevention": "Trồng giống kháng gỉ sắt, theo dõi ruộng trong giai đoạn trước trổ cờ."
+  },
+  {
+    "key": "corn_maize_northern_leaf_blight",
+    "aliases": [
+      "Corn_(maize)___Northern_Leaf_Blight",
+      "northern leaf blight",
+      "kho van la lon"
+    ],
+    "crop_vi": "Ngô",
+    "crop_en": "Corn",
+    "name_vi": "Bệnh cháy lá lớn (đốm lá lớn)",
+    "name_en": "Northern leaf blight",
+    "pathogen": "Nấm Exserohilum turcicum",
+    "symptoms": "Vết bệnh hình thoi giống điếu xì gà, dài 2,5-15 cm, màu xám xanh rồi nâu; khi ẩm có lớp mốc đen trên vết bệnh; lá khô sớm.",
+    "causes": "Nấm qua vụ trên tàn dư; phát triển khi nhiệt độ vừa phải (18-27°C) và lá ướt kéo dài.",
+    "bio_treatment": "Luân canh, cày vùi tàn dư, bổ sung Trichoderma vào đất và phun chế phẩm Bacillus khi bệnh mới xuất hiện.",
+    "chemical_note": "Thuốc nhóm triazole hoặc strobilurin chỉ dùng khi bệnh phát triển trước trổ cờ.",
+    "prevention": "Dùng giống mang gen kháng, gieo mật độ hợp lý, vệ sinh đồng ruộng."
+  },
+  {
+    "key": "grape_black_rot",
+    "aliases": [
+      "Grape___Black_rot",
+      "thoi den nho"
+    ],
+    "crop_vi": "Nho",
+    "crop_en": "Grape",
+    "name_vi": "Bệnh thối đen",
+    "name_en": "Black rot",
+    "pathogen": "Nấm Guignardia bidwellii",
+    "symptoms": "Đốm tròn màu nâu đỏ trên lá, viền sẫm, có các chấm đen nhỏ (quả thể nấm) gần mép đốm; quả thối nâu rồi teo đen thành quả ướp.",
+    "causes": "Nấm qua đông trên quả ướp và vết bệnh trên cành; lây mạnh khi trời ấm và mưa nhiều.",
+    "bio_treatment": "Loại bỏ toàn bộ quả ướp và cành bệnh; tỉa lá tạo thông thoáng chùm quả; phun dung dịch Bordeaux hoặc thuốc gốc đồng, kết hợp chế phẩm Bacillus.",
+    "chemical_note": "Thuốc gốc mancozeb hoặc nhóm triazole chỉ dùng trong giai đoạn từ ra hoa đến đậu quả khi áp lực bệnh cao.",
+    "prevention": "Vệ sinh giàn sau thu hoạch, làm cỏ quanh gốc, trồng ở nơi thoáng gió."
+  },
+  {
+    "key": "grape_esca_black_measles",
+    "aliases": [
+      "Grape___Esca_(Black_Measles)",
+      "esca",
+      "black measles"
+    ],
+    "crop_vi": "Nho",
+    "crop_en": "Grape",
+    "name_vi": "Bệnh Esca (sởi đen)",
+    "name_en": "Esca (Black measles)",
+    "pathogen": "Phức hợp nấm gỗ: Phaeomoniella chlamydospora, Phaeoacremonium spp., Fomitiporia",
+    "symptoms": "Lá có sọc vằn kiểu da hổ: vùng vàng hoặc nâu đỏ cháy khô giữa các gân lá; quả có chấm tím đen; mặt cắt thân có sọc hoặc chấm nâu sẫm.",
+    "causes": "Nấm xâm nhập qua vết cắt tỉa lớn và phát triển chậm trong gỗ nhiều năm; cây già, stress hạn làm triệu chứng rõ hơn.",
+    "bio_treatment": "Không có thuốc chữa triệt để. Cắt tỉa khi trời khô ráo, bôi keo bịt vết cắt và dùng chế phẩm Trichoderma bảo vệ vết cắt; cắt hồi thân đến phần gỗ lành; nhổ bỏ cây chết.",
+    "chemical_note": "Hiện không có thuốc hóa học đặc trị được khuyến cáo rộng rãi; tránh phun thuốc vô ích.",
+    "prevention": "Dùng cây giống sạch bệnh, hạn chế vết cắt lớn, tưới đủ nước để giảm stress cho cây."
+  },
+  {
+    "key": "grape_leaf_blight_isariopsis_leaf_spot",
+    "aliases": [
+      "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)",
+      "isariopsis leaf spot",
+      "chay la nho"
+    ],
+    "crop_vi": "Nho",
+    "crop_en": "Grape",
+    "name_vi": "Bệnh cháy lá (đốm lá Isariopsis)",
+    "name_en": "Leaf blight (Isariopsis leaf spot)",
+    "pathogen": "Nấm Pseudocercospora vitis (Isariopsis clavispora)",
+    "symptoms": "Đốm nâu sẫm hình dạng không đều trên lá, mặt dưới có thể có lớp mốc tối màu; các đốm liên kết làm lá khô cháy và rụng sớm.",
+    "causes": "Phát triển trong điều kiện nóng ẩm, mưa nhiều, giàn rậm rạp; nấm tồn tại trên lá rụng.",
+    "bio_treatment": "Thu gom tiêu hủy lá bệnh và lá rụng; tỉa lá cho giàn thông thoáng; phun Bordeaux hoặc thuốc gốc đồng, chế phẩm Bacillus subtilis.",
+    "chemical_note": "Thuốc gốc mancozeb chỉ dùng khi bệnh lan nhanh trong mùa mưa.",
+    "prevention": "Vệ sinh vườn, bón phân cân đối, tưới gốc thay vì tưới lên lá."
+  },
+  {
+    "key": "orange_haunglongbing_citrus_greening",
+    "aliases": [
+      "Orange___Haunglongbing_(Citrus_greening)",
+      "huanglongbing",
+      "citrus greening",
+      "vang la gan xanh"
+    ],
+    "crop_vi": "Cam / Cây có múi",
+    "crop_en": "Orange / Citrus",
+    "name_vi": "Bệnh vàng lá gân xanh (Greening)",
+    "name_en": "Huanglongbing (Citrus greening)",
+    "pathogen": "Vi khuẩn Candidatus Liberibacter asiaticus, lan truyền bởi rầy chổng cánh Diaphorina citri",
+    "symptoms": "Lá vàng lốm đốm không đối xứng hai bên gân chính, gân lá vẫn xanh; lá nhỏ, mọc thẳng đứng; quả nhỏ, méo lệch, chua, hạt lép; cây suy kiệt dần.",
+    "causes": "Rầy chổng cánh chích hút cây bệnh rồi truyền vi khuẩn sang cây khỏe; cây giống nhiễm bệnh là nguồn lây quan trọng.",
+    "bio_treatment": "Không chữa khỏi được. Nhổ bỏ và tiêu hủy cây bệnh nặng; quản lý rầy bằng thiên địch (ong ký sinh Tamarixia radiata, bọ rùa), nấm Beauveria bassiana, Metarhizium, phun dầu khoáng; trồng xen cây ổi để xua rầy.",
+    "chemical_note": "Thuốc trừ rầy chỉ phun tập trung vào các đợt lộc non khi mật số rầy cao, ưu tiên thuốc chọn lọc ít hại thiên địch.",
+    "prevention": "Chỉ trồng cây giống sạch bệnh có nguồn gốc rõ ràng, theo dõi rầy trên lộc non, quản lý đồng loạt theo vùng."
+  },
+  {
+    "key": "peach_bacterial_spot",
+    "aliases": [
+      "Peach___Bacterial_spot",
+      "dom vi khuan dao"
+    ],
+    "crop_vi": "Đào",
+    "crop_en": "Peach",
+    "name_vi": "Bệnh đốm vi khuẩn",
+    "name_en": "Bacterial spot",
+    "pathogen": "Vi khuẩn Xanthomonas arboricola pv. pruni",
+    "symptoms": "Đốm nhỏ góc cạnh, thấm nước, màu nâu tím trên lá; phần tâm rơi ra tạo lỗ thủng (shot-hole); lá vàng rụng; quả có vết nứt, sần.",
+    "causes": "Vi khuẩn lây qua nước mưa bắn và gió, xâm nhập qua khí khổng và vết thương; nặng khi trời ấm, mưa gió nhiều.",
+    "bio_treatment": "Tỉa bỏ cành bệnh, dọn lá rụng; phun thuốc gốc đồng liều thấp vào giai đoạn rụng lá và đầu mùa (cẩn thận ngộ độc đồng trên lá đào); kết hợp chế phẩm Bacillus.",
+    "chemical_note": "Oxytetracycline chỉ dùng theo khuyến cáo địa phương; hạn chế kháng sinh để tránh vi khuẩn kháng thuốc.",
+    "prevention": "Chọn giống kháng, trồng hàng chắn gió, tránh bón thừa đạm."
+  },
+  {
+    "key": "pepper_bell_bacterial_spot",
+    "aliases": [
+      "Pepper,_bell___Bacterial_spot",
+      "pepper bacterial spot",
+      "dom vi khuan ot"
+    ],
+    "crop_vi": "ớt chuông",
+    "crop_en": "Bell pepper",
+    "name_vi": "Bệnh đốm vi khuẩn",
+    "name_en": "Bacterial spot",
+    "pathogen": "Vi khuẩn Xanthomonas euvesicatoria (X. campestris pv. vesicatoria)",
+    "symptoms": "Đốm nhỏ thấm nước, sau chuyển nâu sẫm, có quầng vàng; lá vàng và rụng hàng loạt; quả có vết sần nổi như vảy.",
+    "causes": "Vi khuẩn lây qua hạt giống, cây con nhiễm bệnh, nước mưa bắn và tưới phun; phát triển mạnh khi nóng ẩm.",
+    "bio_treatment": "Xử lý hạt giống bằng nước nóng 50°C trong 25 phút; nhổ bỏ cây bệnh; tưới gốc hoặc nhỏ giọt; phun thuốc gốc đồng kết hợp chế phẩm Bacillus subtilis.",
+    "chemical_note": "Vi khuẩn dễ kháng đồng; chỉ phun khi cần và kết hợp biện pháp canh tác.",
+    "prevention": "Dùng hạt giống sạch bệnh, luân canh 2-3 năm với cây không thuộc họ cà, không làm việc trên ruộng khi lá ướt."
+  },
+  {
+    "key": "potato_early_blight",
+    "aliases": [
+      "Potato___Early_blight",
+      "dom vong khoai tay"
+    ],
+    "crop_vi": "Khoai tây",
+    "crop_en": "Potato",
+    "name_vi": "Bệnh đốm vòng (mốc sương sớm)",
+    "name_en": "Early blight",
+    "pathogen": "Nấm Alternaria solani",
+    "symptoms": "Đốm nâu sẫm có các vòng đồng tâm như bia bắn, xung quanh có quầng vàng; xuất hiện trên lá già phía dưới trước rồi lan lên trên.",
+    "causes": "Nấm tồn tại trên tàn dư và đất; phát triển khi trời ấm, ẩm xen kẽ khô, cây già hoặc thiếu dinh dưỡng.",
+    "bio_treatment": "Ngắt bỏ lá bệnh ở gốc, bón phân cân đối (đủ đạm và kali); phun chế phẩm Bacillus subtilis; bổ sung Trichoderma vào đất.",
+    "chemical_note": "Thuốc gốc mancozeb, chlorothalonil hoặc nhóm strobilurin chỉ dùng khi bệnh lan nhanh, luân phiên hoạt chất.",
+    "prevention": "Luân canh với cây không thuộc họ cà, cày vùi tàn dư, tưới gốc vào buổi sáng."
+  },
+  {
+    "key": "potato_late_blight",
+    "aliases": [
+      "Potato___Late_blight",
+      "moc suong khoai tay",
+      "suong mai khoai tay"
+    ],
+    "crop_vi": "Khoai tây",
+    "crop_en": "Potato",
+    "name_vi": "Bệnh mốc sương (sương mai)",
+    "name_en": "Late blight",
+    "pathogen": "Phytophthora infestans (nấm noãn – oomycete)",
+    "symptoms": "Vết bệnh thấm nước màu xanh xám, lan rất nhanh và chuyển nâu đen; khi ẩm, mặt dưới lá có lớp mốc trắng ở rìa vết bệnh; củ thối nâu.",
+    "causes": "Bùng phát khi trời mát (10-20°C), ẩm độ trên 90%, sương mù hoặc mưa phùn kéo dài; có thể phá hủy cả ruộng trong vài ngày.",
+    "bio_treatment": "Nhổ bỏ và tiêu hủy ngay cây bệnh; dùng củ giống sạch bệnh; vun luống cao để bảo vệ củ; tưới rãnh, không tưới lên lá; phun thuốc gốc đồng để phòng trước mùa sương.",
+    "chemical_note": "Khi dịch bùng phát cần dùng thuốc đặc trị nấm noãn theo khuyến cáo của cơ quan bảo vệ thực vật, luân phiên hoạt chất.",
+    "prevention": "Chọn giống kháng, trồng đúng thời vụ, theo dõi dự báo thời tiết để phòng sớm."
+  },
+  {
+    "key": "squash_powdery_mildew",
+    "aliases": [
+      "Squash___Powdery_mildew",
+      "phan trang bi"
+    ],
+    "crop_vi": "Bí",
+    "crop_en": "Squash",
+    "name_vi": "Bệnh phấn trắng",
+    "name_en": "Powdery mildew",
+    "pathogen": "Nấm Podosphaera xanthii (và Erysiphe cichoracearum)",
+    "symptoms": "Các đốm phấn trắng tròn trên mặt lá, lan rộng phủ kín lá và thân; lá vàng, khô, cây giảm năng suất.",
+    "causes": "Phát triển mạnh trong điều kiện khô ban ngày, ẩm ban đêm, tán lá dày và thiếu ánh sáng.",
+    "bio_treatment": "Phun sữa tươi pha loãng (1 phần sữa : 9 phần nước), kali bicarbonate, lưu huỳnh hoặc dầu neem; chế phẩm Bacillus subtilis; cắt bỏ lá bệnh nặng.",
+    "chemical_note": "Thuốc nhóm triazole chỉ dùng khi bệnh lan nhanh, luân phiên để tránh kháng thuốc.",
+    "prevention": "Trồng giống kháng, khoảng cách hợp lý, bón cân đối và tưới gốc."
+  },
+  {
+    "key": "strawberry_leaf_scorch",
+    "aliases": [
+      "Strawberry___Leaf_scorch",
+      "chay la dau tay"
+    ],
+    "crop_vi": "Dâu tây",
+    "crop_en": "Strawberry",
+    "name_vi": "Bệnh cháy lá",
+    "name_en": "Leaf scorch",
+    "pathogen": "Nấm Diplocarpon earlianum",
+    "symptoms": "Nhiều đốm nhỏ màu tím sẫm, không có tâm trắng; các đốm liên kết làm lá khô cháy như bị lửa xém, mép lá cong lên.",
+    "causes": "Nấm tồn tại trên lá bệnh; lây qua nước bắn, phát triển khi ẩm và mưa nhiều.",
+    "bio_treatment": "Cắt bỏ và tiêu hủy lá bệnh; tưới nhỏ giọt; phủ rơm hoặc màng phủ để hạn chế nước bắn; phun chế phẩm Bacillus subtilis.",
+    "chemical_note": "Thuốc gốc captan chỉ dùng khi bệnh nặng, tuân thủ thời gian cách ly trước thu hoạch.",
+    "prevention": "Trồng giống kháng, thay luống sau 2-3 năm, mật độ thông thoáng."
+  },
+  {
+    "key": "tomato_bacterial_spot",
+    "aliases": [
+      "Tomato___Bacterial_spot",
+      "dom vi khuan ca chua"
+    ],
+    "crop_vi": "Cà chua",
+    "crop_en": "Tomato",
+    "name_vi": "Bệnh đốm vi khuẩn",
+    "name_en": "Bacterial spot",
+    "pathogen": "Vi khuẩn Xanthomonas spp. (X. vesicatoria, X. euvesicatoria, X. perforans)",
+    "symptoms": "Đốm nhỏ thấm nước, sau chuyển nâu đen, đôi khi có quầng vàng; lá cháy và rụng; quả có vết sần nhỏ màu nâu.",
+    "causes": "Vi khuẩn lây qua hạt giống, cây con và nước mưa bắn; phát triển mạnh khi nóng ẩm, mưa gió.",
+    "bio_treatment": "Xử lý hạt giống bằng nước nóng; nhổ bỏ cây bệnh; tưới nhỏ giọt; phun thuốc gốc đồng kết hợp chế phẩm Bacillus subtilis.",
+    "chemical_note": "Hạn chế lạm dụng đồng do vi khuẩn dễ kháng; chỉ phun khi cần.",
+    "prevention": "Hạt giống sạch bệnh, luân canh 2-3 năm, không thao tác trên cây khi lá ướt."
+  },
+  {
+    "key": "tomato_early_blight",
+    "aliases": [
+      "Tomato___Early_blight",
+      "dom vong ca chua"
+    ],
+    "crop_vi": "Cà chua",
+    "crop_en": "Tomato",
+    "name_vi": "Bệnh đốm vòng (mốc sương sớm)",
+    "name_en": "Early blight",
+    "pathogen": "Nấm Alternaria solani",
+    "symptoms": "Đốm nâu có các vòng đồng tâm như bia bắn, quầng vàng xung quanh, xuất hiện trên lá già phía dưới trước; thân và quả cũng có thể bị.",
+    "causes": "Nấm tồn tại trên tàn dư và đất; phát triển khi trời ấm, ẩm xen khô, cây mang nhiều quả hoặc thiếu dinh dưỡng.",
+    "bio_treatment": "Tỉa bỏ lá gốc bị bệnh, phủ gốc bằng rơm để hạn chế đất bắn lên lá; phun chế phẩm Bacillus subtilis; bổ sung Trichoderma vào đất.",
+    "chemical_note": "Thuốc gốc mancozeb, chlorothalonil chỉ dùng khi bệnh lan nhanh, luân phiên hoạt chất.",
+    "prevention": "Luân canh với cây không thuộc họ cà, làm giàn cho cây thông thoáng, tưới gốc."
+  },
+  {
+    "key": "tomato_late_blight",
+    "aliases": [
+      "Tomato___Late_blight",
+      "moc suong ca chua",
+      "suong mai ca chua"
+    ],
+    "crop_vi": "Cà chua",
+    "crop_en": "Tomato",
+    "name_vi": "Bệnh mốc sương (sương mai)",
+    "name_en": "Late blight",
+    "pathogen": "Phytophthora infestans (nấm noãn – oomycete)",
+    "symptoms": "Vết bệnh lớn màu xanh xám đến nâu đen, thấm nước, lan nhanh từ mép lá; mặt dưới có lớp mốc trắng khi ẩm; quả có vết nâu cứng, loang lổ.",
+    "causes": "Bùng phát khi trời mát, ẩm độ cao, sương mù hoặc mưa phùn kéo dài; lây lan rất nhanh theo gió.",
+    "bio_treatment": "Nhổ bỏ tiêu hủy cây bệnh ngay khi phát hiện; tưới gốc, không tưới lên lá; làm giàn thông thoáng; phun thuốc gốc đồng để phòng trước giai đoạn thời tiết thuận lợi cho bệnh.",
+    "chemical_note": "Khi bệnh bùng phát cần dùng thuốc đặc trị nấm noãn theo khuyến cáo của cơ quan bảo vệ thực vật.",
+    "prevention": "Giống kháng, không trồng cà chua gần ruộng khoai tây, theo dõi thời tiết để phòng sớm."
+  },
+  {
+    "key": "tomato_leaf_mold",
+    "aliases": [
+      "Tomato___Leaf_Mold",
+      "moc la ca chua"
+    ],
+    "crop_vi": "Cà chua",
+    "crop_en": "Tomato",
+    "name_vi": "Bệnh mốc lá",
+    "name_en": "Leaf mold",
+    "pathogen": "Nấm Passalora fulva (Fulvia fulva)",
+    "symptoms": "Mặt trên lá có đốm vàng nhạt không rõ ranh giới; mặt dưới tương ứng có lớp mốc màu xanh ô liu đến nâu như nhung; lá khô và rụng.",
+    "causes": "Phổ biến trong nhà kính, nhà màng có ẩm độ trên 85% và thông gió kém.",
+    "bio_treatment": "Tăng thông gió, giảm ẩm độ nhà kính, tỉa lá gốc; phun chế phẩm Bacillus subtilis; loại bỏ lá bệnh.",
+    "chemical_note": "Thuốc gốc đồng hoặc chlorothalonil chỉ dùng khi bệnh nặng.",
+    "prevention": "Chọn giống kháng (mang gen Cf), giữ khoảng cách trồng hợp lý, tưới nhỏ giọt."
+  },
+  {
+    "key": "tomato_septoria_leaf_spot",
+    "aliases": [
+      "Tomato___Septoria_leaf_spot",
+      "dom la septoria"
+    ],
+    "crop_vi": "Cà chua",
+    "crop_en": "Tomato",
+    "name_vi": "Bệnh đốm lá Septoria",
+    "name_en": "Septoria leaf spot",
+    "pathogen": "Nấm Septoria lycopersici",
+    "symptoms": "Rất nhiều đốm tròn nhỏ (1,5-6 mm), tâm xám trắng, viền nâu sẫm, giữa tâm có chấm đen li ti; bắt đầu từ lá già phía dưới, lá vàng và rụng.",
+    "causes": "Nấm tồn tại trên tàn dư và cỏ dại họ cà; lây qua nước bắn khi trời ấm ẩm, mưa nhiều.",
+    "bio_treatment": "Tỉa bỏ lá gốc bị bệnh, phủ gốc bằng rơm; phun chế phẩm Bacillus subtilis hoặc thuốc gốc đồng.",
+    "chemical_note": "Chlorothalonil hoặc mancozeb chỉ dùng khi bệnh lan nhanh.",
+    "prevention": "Luân canh, dọn sạch tàn dư và cỏ dại, tưới gốc."
+  },
+  {
+    "key": "tomato_spider_mites_two_spotted_spider_mite",
+    "aliases": [
+      "Tomato___Spider_mites Two-spotted_spider_mite",
+      "spider mites",
+      "nhen do"
+    ],
+    "crop_vi": "Cà chua",
+    "crop_en": "Tomato",
+    "name_vi": "Nhện đỏ hai chấm (dịch hại)",
+    "name_en": "Two-spotted spider mite",
+    "pathogen": "Nhện Tetranychus urticae (động vật chân khớp, không phải nấm hay vi khuẩn)",
+    "symptoms": "Lá có các chấm vàng li ti, sau chuyển màu bạc hoặc đồng, khô và rụng; mặt dưới lá có tơ mảnh và nhện rất nhỏ.",
+    "causes": "Bùng phát khi thời tiết nóng, khô; lạm dụng thuốc trừ sâu phổ rộng làm chết thiên địch khiến nhện bộc phát.",
+    "bio_treatment": "Thả nhện bắt mồi Phytoseiulus persimilis hoặc Neoseiulus californicus; xịt nước mạnh vào mặt dưới lá; phun dầu neem hoặc xà phòng kali.",
+    "chemical_note": "Thuốc đặc trị nhện chỉ dùng khi mật số cao, luân phiên hoạt chất; tránh thuốc trừ sâu phổ rộng.",
+    "prevention": "Giữ ẩm hợp lý, làm sạch cỏ dại, bảo vệ thiên địch, kiểm tra mặt dưới lá thường xuyên."
+  },
+  {
+    "key": "tomato_target_spot",
+    "aliases": [
+      "Tomato___Target_Spot",
+      "dom muc tieu"
+    ],
+    "crop_vi": "Cà chua",
+    "crop_en": "Tomato",
+    "name_vi": "Bệnh đốm mục tiêu",
+    "name_en": "Target spot",
+    "pathogen": "Nấm Corynespora cassiicola",
+    "symptoms": "Đốm nâu có các vòng đồng tâm, tâm có thể nứt hoặc thủng; lá vàng và rụng; quả có vết lõm nâu.",
+    "causes": "Phát triển khi trời ấm và ẩm, tán cây rậm rạp, lá ướt kéo dài.",
+    "bio_treatment": "Tỉa lá gốc, làm giàn thông thoáng, dọn tàn dư; phun chế phẩm Bacillus subtilis.",
+    "chemical_note": "Chlorothalonil hoặc nhóm strobilurin chỉ dùng khi bệnh lan rộng.",
+    "prevention": "Luân canh, vệ sinh đồng ruộng, tưới gốc."
+  },
+  {
+    "key": "tomato_tomato_yellow_leaf_curl_virus",
+    "aliases": [
+      "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+      "TYLCV",
+      "xoan vang la ca chua"
+    ],
+    "crop_vi": "Cà chua",
+    "crop_en": "Tomato",
+    "name_vi": "Bệnh virus xoăn vàng lá",
+    "name_en": "Tomato yellow leaf curl virus",
+    "pathogen": "Virus TYLCV (Begomovirus), lan truyền bởi bọ phấn trắng Bemisia tabaci",
+    "symptoms": "Lá non nhỏ lại, mép lá vàng và cong lên trên như hình thìa; cây lùn, ngọn chụm; ra hoa ít, rụng hoa, năng suất giảm mạnh.",
+    "causes": "Bọ phấn trắng chích hút cây bệnh rồi truyền virus sang cây khỏe; cỏ dại là nguồn tồn tại virus.",
+    "bio_treatment": "Không chữa được cây đã nhiễm. Nhổ bỏ tiêu hủy cây bệnh sớm; dùng lưới chắn côn trùng cho vườn ươm; đặt bẫy dính màu vàng; phun nấm Beauveria bassiana hoặc Cordyceps (Isaria) fumosorosea và dầu neem để trừ bọ phấn.",
+    "chemical_note": "Thuốc trừ bọ phấn chỉ dùng khi mật số cao, luân phiên nhóm hoạt chất vì bọ phấn kháng thuốc rất nhanh.",
+    "prevention": "Trồng giống kháng (mang gen Ty), cây con sạch bệnh, làm sạch cỏ dại, không trồng gối vụ cà chua liên tục."
+  },
+  {
+    "key": "tomato_tomato_mosaic_virus",
+    "aliases": [
+      "Tomato___Tomato_mosaic_virus",
+      "ToMV",
+      "kham la ca chua"
+    ],
+    "crop_vi": "Cà chua",
+    "crop_en": "Tomato",
+    "name_vi": "Bệnh virus khảm lá",
+    "name_en": "Tomato mosaic virus",
+    "pathogen": "Virus ToMV (Tobamovirus) – lây qua tiếp xúc cơ học và hạt giống",
+    "symptoms": "Lá khảm loang lổ xanh đậm xen xanh nhạt hoặc vàng; lá nhăn, biến dạng, đôi khi hẹp như lá dương xỉ; quả chín không đều.",
+    "causes": "Virus rất bền, lây qua tay, dụng cụ, quần áo, hạt giống và tàn dư; tồn tại lâu trong đất và trên vật dụng.",
+    "bio_treatment": "Không chữa được. Nhổ bỏ cây bệnh; khử trùng dụng cụ (dung dịch tẩy javel loãng); rửa tay bằng xà phòng hoặc nhúng tay vào sữa tách béo trước khi chăm cây; không hút thuốc lá khi làm vườn.",
+    "chemical_note": "Không có thuốc hóa học diệt virus; không phun thuốc vô ích.",
+    "prevention": "Dùng hạt giống sạch hoặc giống kháng (mang gen Tm-2), vệ sinh nghiêm ngặt khi tỉa cành, luân canh."
+  },
+  {
+    "key": "coffee_leaf_rust",
+    "aliases": [
+      "rust",
+      "coffee rust",
+      "leaf rust",
+      "gi sat ca phe"
+    ],
+    "crop_vi": "Cà phê",
+    "crop_en": "Coffee",
+    "name_vi": "Bệnh gỉ sắt",
+    "name_en": "Coffee leaf rust",
+    "pathogen": "Nấm Hemileia vastatrix",
+    "symptoms": "Mặt trên lá có đốm vàng nhạt; mặt dưới tương ứng có lớp bột bào tử màu vàng cam; vết bệnh lớn dần, lá khô và rụng hàng loạt, cây suy kiệt.",
+    "causes": "Bào tử lây theo gió và nước mưa; phát triển mạnh ở nhiệt độ 21-25°C, mưa nhiều, cây mang quả nhiều và thiếu dinh dưỡng.",
+    "bio_treatment": "Tỉa cành tạo tán thông thoáng, tiêu hủy lá bệnh; bón phân cân đối và phân hữu cơ; phun dung dịch Bordeaux hoặc thuốc gốc đồng đầu mùa mưa; nấm ký sinh Lecanicillium lecanii giúp hạn chế bào tử gỉ sắt.",
+    "chemical_note": "Thuốc nhóm triazole (hexaconazole, propiconazole) chỉ dùng khi bệnh nặng, phun ướt đều mặt dưới lá.",
+    "prevention": "Trồng giống kháng (dòng TR, Catimor), trồng cây che bóng hợp lý, theo dõi đầu mùa mưa."
+  },
+  {
+    "key": "coffee_leaf_miner",
+    "aliases": [
+      "miner",
+      "leaf miner",
+      "sau duc la ca phe"
+    ],
+    "crop_vi": "Cà phê",
+    "crop_en": "Coffee",
+    "name_vi": "Sâu đục lá (dịch hại)",
+    "name_en": "Coffee leaf miner",
+    "pathogen": "Sâu non của bướm Leucoptera coffeella",
+    "symptoms": "Vết đục dạng mảng nâu khô, hình dạng không đều trên mặt lá, lớp biểu bì bong như giấy; lá rụng sớm, giảm quang hợp.",
+    "causes": "Bùng phát trong mùa khô nóng; lạm dụng thuốc trừ sâu phổ rộng làm chết ong ký sinh và thiên địch.",
+    "bio_treatment": "Bảo vệ thiên địch (ong ký sinh, ong vò vẽ, kiến); phun nấm Beauveria bassiana hoặc dầu neem; tỉa bỏ lá bị hại nặng.",
+    "chemical_note": "Chỉ dùng thuốc trừ sâu chọn lọc khi tỷ lệ lá bị hại vượt ngưỡng kinh tế theo khuyến cáo địa phương.",
+    "prevention": "Duy trì cây che bóng, tưới đủ nước mùa khô, theo dõi mật số định kỳ."
+  },
+  {
+    "key": "coffee_cercospora_leaf_spot",
+    "aliases": [
+      "cercospora",
+      "brown eye spot",
+      "dom mat cua ca phe"
+    ],
+    "crop_vi": "Cà phê",
+    "crop_en": "Coffee",
+    "name_vi": "Bệnh đốm mắt cua",
+    "name_en": "Cercospora leaf spot (Brown eye spot)",
+    "pathogen": "Nấm Cercospora coffeicola",
+    "symptoms": "Đốm tròn màu nâu, tâm xám trắng, có quầng vàng bao quanh giống mắt cua; quả bị bệnh có vết nâu, chín ép.",
+    "causes": "Thường gặp ở cây thiếu dinh dưỡng (đặc biệt đạm, kali), bị nắng gắt không có cây che bóng, vườn ươm quá ẩm.",
+    "bio_treatment": "Bón phân cân đối và bổ sung phân hữu cơ; trồng cây che bóng; tiêu hủy lá bệnh; phun thuốc gốc đồng hoặc chế phẩm Bacillus.",
+    "chemical_note": "Thuốc nhóm triazole chỉ dùng khi bệnh gây hại nặng trên quả.",
+    "prevention": "Dinh dưỡng đầy đủ, che bóng vườn ươm và vườn kiến thiết, tránh tưới quá ẩm."
+  },
+  {
+    "key": "coffee_phoma_leaf_spot",
+    "aliases": [
+      "phoma",
+      "kho canh kho la phoma"
+    ],
+    "crop_vi": "Cà phê",
+    "crop_en": "Coffee",
+    "name_vi": "Bệnh đốm lá Phoma",
+    "name_en": "Phoma leaf spot",
+    "pathogen": "Nấm Phoma spp. (Phoma costarricensis)",
+    "symptoms": "Vết nâu đen ở mép và chóp lá non, lá cong biến dạng; chồi non và cành non bị khô đen, hoa quả non rụng.",
+    "causes": "Phổ biến ở vùng cao, nhiệt độ thấp, gió mạnh làm tổn thương lá non; ẩm độ cao kéo dài.",
+    "bio_treatment": "Trồng hàng cây chắn gió, tỉa bỏ chồi bệnh; phun thuốc gốc đồng trong giai đoạn ra lộc non; bón phân cân đối.",
+    "chemical_note": "Thuốc nhóm triazole hoặc strobilurin chỉ dùng khi bệnh lan rộng.",
+    "prevention": "Chắn gió, che bóng hợp lý, bảo vệ lộc non trong mùa lạnh ẩm."
+  }
+]

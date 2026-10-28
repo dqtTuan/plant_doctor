@@ -1,0 +1,13 @@
+# Chỉ gửi những gì image cần: pyproject, requirements, src/, app/, data/knowledge_base/
+*
+!pyproject.toml
+!README.md
+!requirements.txt
+!src/
+!app/
+!data/knowledge_base/
+
+**/__pycache__
+**/*.py[cod]
+**/*.egg-info
+
