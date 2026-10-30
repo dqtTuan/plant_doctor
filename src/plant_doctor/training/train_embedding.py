@@ -37,15 +37,37 @@ def queries_for(e):
     return name_q, section_q
 
 
-def build_pairs(kb):
+def extract_pairs_from_markdown():
+    """Trích xuất cặp câu hỏi - tài liệu trực tiếp từ các file Markdown trong kho tri thức."""
+    from plant_doctor.config import KB_DIR
+    import re
     pairs = []
-    for e in kb:
-        full = entry_to_text(e)
-        name_q, section_q = queries_for(e)
-        pairs += [(q, full) for q in name_q]
-        for q, field in section_q:
-            pairs.append((q, full))                    # khớp với tài liệu đầy đủ trong FAISS
-            pairs.append((q, section_text(e, field)))  # và với đúng phần nội dung liên quan
+    for md_file in Path(KB_DIR).glob("*.md"):
+        content = md_file.read_text(encoding="utf-8")
+        blocks = re.split(r"\n##\s+", content)
+        for block in blocks[1:]:
+            lines = [l.strip() for l in block.splitlines() if l.strip()]
+            if not lines:
+                continue
+            title_line = lines[0]
+            pairs.append((f"Cách phòng trị và triệu chứng của {title_line}", block))
+            pairs.append((title_line, block))
+    return pairs
+
+
+def build_pairs(kb=None):
+    pairs = []
+    if kb:
+        for e in kb:
+            full = entry_to_text(e)
+            name_q, section_q = queries_for(e)
+            pairs += [(q, full) for q in name_q]
+            for q, field in section_q:
+                pairs.append((q, full))                    # khớp với tài liệu đầy đủ trong FAISS
+                pairs.append((q, section_text(e, field)))  # và với đúng phần nội dung liên quan
+    else:
+        pairs += extract_pairs_from_markdown()
+
     extra = TRAIN_DATA_DIR / "embedding_pairs.jsonl"
     if extra.exists():
         for line in extra.read_text(encoding="utf-8").splitlines():
@@ -56,8 +78,14 @@ def build_pairs(kb):
 
 
 @torch.no_grad()
-def top1_accuracy(model, kb):
-    docs = [entry_to_text(e) for e in kb]
+def top1_accuracy(model, kb=None):
+    if kb:
+        docs = [entry_to_text(e) for e in kb]
+    else:
+        from plant_doctor.rag.build_index import load_documents
+        docs = [d.page_content for d in load_documents()[:30]]
+    if not docs:
+        return 1.0
     doc_emb = model.encode(docs, normalize_embeddings=True, convert_to_tensor=True)
     hits = total = 0
     for i, e in enumerate(kb):

@@ -74,10 +74,9 @@ def build_vector_store(kb_dir: Path | str = KB_DIR,
                        chunk_overlap: int = 200,
                        pgvector_url: str = PGVECTOR_URL) -> int:
     """Đóng gói toàn bộ tri thức thành FAISS index cục bộ hoặc PostgreSQL (pgvector)."""
-    kb = load_kb()
-    docs = [Document(page_content=entry_to_text(e),
-                     metadata={"key": e["key"], "source": "diseases.json", "title": title(e)})
-            for e in kb]
+    file_docs = load_documents(kb_dir)
+    if not file_docs:
+        print(f"Cảnh báo: Không tìm thấy tài liệu nào trong {kb_dir}")
 
     embed_path = Path(embed_dir)
     if not (embed_path / "config.json").exists() and not (embed_path / "modules.json").exists():
@@ -87,16 +86,16 @@ def build_vector_store(kb_dir: Path | str = KB_DIR,
     embeddings = HuggingFaceEmbeddings(model_name=str(embed_path),
                                        encode_kwargs={"normalize_embeddings": True})
 
-    file_docs = load_documents(kb_dir)
+    kb = load_kb()
     chunks = chunk_documents_by_type(
         file_docs,
         chunker_type=chunker_type,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
         embed_fn=embeddings.embed_documents,
-        kb=kb,
+        kb=kb if kb else None,
     )
-    docs += chunks
+    docs = chunks
     print(f"Tổng số tài liệu sẵn sàng index ({chunker_type} chunking): {len(docs)}")
 
     if pgvector_url:

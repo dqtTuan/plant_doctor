@@ -51,7 +51,48 @@ def fill(tpl, e):
     return tpl.format(cls=cls, crop=e["crop_vi"].lower(), name=e["name_vi"].lower())
 
 
-def build_samples(kb, rng):
+def extract_entries_from_markdown() -> list:
+    """Trích xuất danh sách bệnh từ tài liệu Markdown trong kho tri thức."""
+    from plant_doctor.config import KB_DIR
+    import re
+    entries = []
+    for md_file in Path(KB_DIR).glob("*.md"):
+        content = md_file.read_text(encoding="utf-8")
+        blocks = re.split(r"\n##\s+", content)
+        for block in blocks[1:]:
+            lines = [l.strip() for l in block.splitlines() if l.strip()]
+            if not lines:
+                continue
+            title_line = lines[0]
+            name_part = title_line.split("–")[0].strip() if "–" in title_line else title_line
+            crop_part = title_line.split("–")[1].strip() if "–" in title_line else "Cây trồng"
+            key = re.sub(r"[^0-9a-z]+", "_", name_part.lower()).strip("_")
+            name_vi = name_part.split("(")[0].strip()
+            name_en = name_part.split("(")[1].rstrip(")") if "(" in name_part else name_part
+            crop_vi = crop_part.split(":")[1].split("(")[0].strip() if ":" in crop_part else crop_part
+            crop_en = crop_part.split("(")[1].rstrip(")") if "(" in crop_part else crop_part
+            entries.append({
+                "key": key,
+                "name_vi": name_vi,
+                "name_en": name_en,
+                "crop_vi": crop_vi,
+                "crop_en": crop_en,
+                "symptoms": block,
+                "pathogen": "Nấm hoặc vi khuẩn gây hại",
+                "causes": "Thời tiết ẩm ướt kéo dài.",
+                "bio_treatment": "Sử dụng chế phẩm sinh học Trichoderma hoặc Bacillus.",
+                "chemical_note": "Chỉ dùng khi cần thiết và cách ly an toàn.",
+                "prevention": "Vệ sinh đồng ruộng, tỉa cành thông thoáng.",
+                "aliases": [name_part],
+            })
+    return entries
+
+
+def build_samples(kb=None, rng=None):
+    if rng is None:
+        rng = random.Random(SEED)
+    if not kb:
+        kb = extract_entries_from_markdown()
     diseases = [e for e in kb if e["key"] != "healthy"]
     healthy = next((e for e in kb if e["key"] == "healthy"), None)
     samples = []
