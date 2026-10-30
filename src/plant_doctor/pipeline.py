@@ -172,11 +172,13 @@ class PlantDoctorPipeline:
         yield from streamer
 
     def fallback_answer(self, diagnosis: list[tuple[str, float, dict | None]], texts: list[str]) -> str:
-        """Chế độ dự phòng xuất phác đồ Markdown chuẩn khi không có LLM."""
-        entries = [e for _, _, e in diagnosis if e]
+        """Chế độ dự phòng khi không có LLM: ưu tiên tài liệu thực tế của người dùng."""
+        if texts:
+            return "Chưa có mô hình ngôn ngữ cục bộ. Trích đoạn tài liệu từ kho tri thức của bạn:\n\n" + format_context(texts)
+        entries = [e for _, _, e in diagnosis if e and ("symptoms" in e or "bio_treatment" in e)]
         if entries:
             return "\n\n---\n\n".join(entry_to_answer(e) for e in entries)
-        return "Chưa có mô hình ngôn ngữ cục bộ. Tài liệu liên quan:\n\n" + format_context(texts)
+        return "Kho tri thức của bạn chưa có tài liệu về bệnh này. Vui lòng nạp thêm tài liệu chuyên ngành (PDF/MD/TXT) vào hệ thống."
 
     def get_cached_answer(self, question: str, diagnosis: list[tuple[str, float, dict | None]]) -> str | None:
         """Kiểm tra câu hỏi có phải mẫu xuất phác đồ chuẩn không để trả về kết quả ngay lập tức (0.01s)."""
