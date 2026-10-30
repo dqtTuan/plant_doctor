@@ -36,3 +36,7 @@ def test_build_messages():
     assert [m["role"] for m in msgs] == ["system", "user", "assistant", "user"]
     assert "[1] doc" in msgs[-1]["content"]
 
+
+def test_system_prompt_general_and_farming():
+    assert "chuyên gia bệnh học thực vật" in SYSTEM_PROMPT.lower()
+    assert "chào hỏi" in SYSTEM_PROMPT.lower() or "đời sống" in SYSTEM_PROMPT.lower()
