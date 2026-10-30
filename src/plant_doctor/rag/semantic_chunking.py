@@ -13,7 +13,18 @@ from typing import Callable
 import numpy as np
 from langchain_core.documents import Document
 
-from plant_doctor.rag.build_index import tag_disease
+def tag_disease(doc: Document, kb: list) -> None:
+    """Gắn metadata key cho đoạn tài liệu nếu có nhắc tên cây và tên bệnh."""
+    text = doc.page_content.lower()
+    for e in kb:
+        if e["key"] == "healthy":
+            continue
+        crop_hit = e["crop_vi"].lower() in text or e["crop_en"].lower() in text
+        name_hit = e["name_vi"].lower() in text or e["name_en"].lower() in text
+        if crop_hit and name_hit:
+            doc.metadata["key"] = e["key"]
+            return
+    doc.metadata["key"] = ""
 
 
 def split_sentences(text: str) -> list[str]:

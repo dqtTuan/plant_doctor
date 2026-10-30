@@ -1,23 +1,24 @@
-"""Bước 4: Xây dựng kho tri thức vector cục bộ (FAISS).
+"""Bước 4: Xây dựng kho tri thức vector cục bộ (FAISS) hoặc PostgreSQL (pgvector).
 
-Nguồn tài liệu trong data/knowledge_base/:
-  - diseases.json   : mỗi bệnh = 1 tài liệu đầy đủ, gắn metadata key (khớp với nhãn YOLO)
-  - *.pdf, *.md, *.txt : tài liệu bạn tự biên soạn -> cắt đoạn theo chunk_size, gối đầu chunk_overlap
-Đoạn PDF/văn bản có nhắc tên bệnh sẽ được gắn cùng key để truy xuất có lọc theo chẩn đoán.
+Hỗ trợ:
+- Chunking: Semantic Chunking (ngữ nghĩa) hoặc Recursive (kích thước cố định).
+- Vector DB: FAISS (cục bộ) hoặc PostgreSQL (pgvector extension khi có PGVECTOR_URL).
 
-python -m plant_doctor.rag.build_index
+python -m plant_doctor.rag.build_index --chunker-type semantic
 """
 import argparse
 from pathlib import Path
 
+import numpy as np
 from langchain_community.vectorstores import FAISS
 from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from plant_doctor.config import EMBED_DIR, FAISS_DIR, KB_DIR
+from plant_doctor.config import EMBED_DIR, FAISS_DIR, KB_DIR, PGVECTOR_TABLE, PGVECTOR_URL
 from plant_doctor.knowledge import entry_to_text, load_kb, title
+from plant_doctor.rag.semantic_chunking import split_documents_semantically, tag_disease
 
 
 def load_documents(kb_dir: Path | str = KB_DIR) -> list[Document]:
@@ -38,25 +39,25 @@ def load_documents(kb_dir: Path | str = KB_DIR) -> list[Document]:
     return docs
 
 
-def tag_disease(doc: Document, kb: list) -> None:
-    """Gắn metadata key cho đoạn tài liệu nếu có nhắc tên cây và tên bệnh."""
-    text = doc.page_content.lower()
-    for e in kb:
-        if e["key"] == "healthy":
-            continue
-        crop_hit = e["crop_vi"].lower() in text or e["crop_en"].lower() in text
-        name_hit = e["name_vi"].lower() in text or e["name_en"].lower() in text
-        if crop_hit and name_hit:
-            doc.metadata["key"] = e["key"]
-            return
-    doc.metadata["key"] = ""
-
-
 def chunk_documents(docs: list[Document], chunk_size: int = 1000, chunk_overlap: int = 200,
                     kb: list | None = None) -> list[Document]:
     """Cắt nhỏ tài liệu bằng RecursiveCharacterTextSplitter và tự động gắn thẻ metadata key."""
+    return chunk_documents_by_type(docs, chunker_type="recursive", chunk_size=chunk_size, chunk_overlap=chunk_overlap, kb=kb)
+
+
+def chunk_documents_by_type(docs: list[Document],
+                           chunker_type: str = "semantic",
+                           chunk_size: int = 1000,
+                           chunk_overlap: int = 200,
+                           embed_fn = None,
+                           kb: list | None = None) -> list[Document]:
+    """Hỗ trợ phân đoạn tài liệu theo Semantic Chunking hoặc Recursive Splitting."""
     if not docs:
         return []
+
+    if chunker_type == "semantic" and embed_fn is not None:
+        return split_documents_semantically(docs, embed_fn=embed_fn, kb=kb)
+
     splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     chunks = splitter.split_documents(docs)
     if kb:
@@ -65,21 +66,18 @@ def chunk_documents(docs: list[Document], chunk_size: int = 1000, chunk_overlap:
     return chunks
 
 
-def build_faiss_index(kb_dir: Path | str = KB_DIR,
-                      embed_dir: Path | str = EMBED_DIR,
-                      output_dir: Path | str = FAISS_DIR,
-                      chunk_size: int = 1000,
-                      chunk_overlap: int = 200) -> int:
-    """Đóng gói toàn bộ tri thức thành FAISS index cục bộ. Trả về tổng số documents đã index."""
+def build_vector_store(kb_dir: Path | str = KB_DIR,
+                       embed_dir: Path | str = EMBED_DIR,
+                       output_dir: Path | str = FAISS_DIR,
+                       chunker_type: str = "semantic",
+                       chunk_size: int = 1000,
+                       chunk_overlap: int = 200,
+                       pgvector_url: str = PGVECTOR_URL) -> int:
+    """Đóng gói toàn bộ tri thức thành FAISS index cục bộ hoặc PostgreSQL (pgvector)."""
     kb = load_kb()
     docs = [Document(page_content=entry_to_text(e),
                      metadata={"key": e["key"], "source": "diseases.json", "title": title(e)})
             for e in kb]
-
-    file_docs = load_documents(kb_dir)
-    chunks = chunk_documents(file_docs, chunk_size=chunk_size, chunk_overlap=chunk_overlap, kb=kb)
-    docs += chunks
-    print(f"{len(kb)} mục từ diseases.json + {len(chunks)} đoạn từ {len(file_docs)} trang/tệp tài liệu")
 
     embed_path = Path(embed_dir)
     if not (embed_path / "config.json").exists() and not (embed_path / "modules.json").exists():
@@ -88,29 +86,58 @@ def build_faiss_index(kb_dir: Path | str = KB_DIR,
 
     embeddings = HuggingFaceEmbeddings(model_name=str(embed_path),
                                        encode_kwargs={"normalize_embeddings": True})
-    store = FAISS.from_documents(docs, embeddings, distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT)
-    out_path = Path(output_dir)
-    out_path.mkdir(parents=True, exist_ok=True)
-    store.save_local(str(out_path))
-    print(f"Đã đóng gói {len(docs)} tài liệu vào FAISS tại: {out_path}")
-    return len(docs)
+
+    file_docs = load_documents(kb_dir)
+    chunks = chunk_documents_by_type(
+        file_docs,
+        chunker_type=chunker_type,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        embed_fn=embeddings.embed_documents,
+        kb=kb,
+    )
+    docs += chunks
+    print(f"Tổng số tài liệu sẵn sàng index ({chunker_type} chunking): {len(docs)}")
+
+    if pgvector_url:
+        print(f"Đang lưu vector vào PostgreSQL (pgvector)...")
+        from plant_doctor.rag.pgvector_store import PGVectorStore
+        pg_store = PGVectorStore(connection_url=pgvector_url, table_name=PGVECTOR_TABLE)
+        doc_texts = [d.page_content for d in docs]
+        vecs = embeddings.embed_documents(doc_texts)
+        count = pg_store.add_documents(docs, vecs)
+        print(f"Đã lưu thành công {count} vector kèm metadata vào PostgreSQL!")
+        return count
+    else:
+        # Lưu vào FAISS cục bộ
+        store = FAISS.from_documents(docs, embeddings, distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT)
+        out_path = Path(output_dir)
+        out_path.mkdir(parents=True, exist_ok=True)
+        store.save_local(str(out_path))
+        print(f"Đã đóng gói {len(docs)} tài liệu vào FAISS tại: {out_path}")
+        return len(docs)
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Xây dựng Vector Store FAISS cục bộ")
+    ap = argparse.ArgumentParser(description="Xây dựng Vector Store (FAISS hoặc PostgreSQL pgvector)")
     ap.add_argument("--kb-dir", default=str(KB_DIR), help="Thư mục chứa tài liệu tri thức")
     ap.add_argument("--embed-dir", default=str(EMBED_DIR), help="Thư mục mô hình embedding")
     ap.add_argument("--out-dir", default=str(FAISS_DIR), help="Thư mục lưu faiss index")
-    ap.add_argument("--chunk-size", type=int, default=1000, help="Kích thước chunk tối đa")
+    ap.add_argument("--chunker-type", choices=["semantic", "recursive"], default="semantic",
+                    help="Phương pháp chia đoạn: semantic (ngữ nghĩa) hoặc recursive (cố định)")
+    ap.add_argument("--chunk-size", type=int, default=1000, help="Kích thước chunk (nếu dùng recursive)")
     ap.add_argument("--chunk-overlap", type=int, default=200, help="Độ gối đầu giữa các chunk")
+    ap.add_argument("--pgvector-url", default=PGVECTOR_URL, help="URL kết nối PostgreSQL pgvector (nếu có)")
     args = ap.parse_args()
 
-    build_faiss_index(
+    build_vector_store(
         kb_dir=args.kb_dir,
         embed_dir=args.embed_dir,
         output_dir=args.out_dir,
+        chunker_type=args.chunker_type,
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
+        pgvector_url=args.pgvector_url,
     )
 
 

@@ -16,7 +16,8 @@ import torch
 from PIL import Image
 
 from plant_doctor.config import (DEFAULT_MAX_CONTEXT_DOCS, DEFAULT_MAX_NEW_TOKENS,
-                                 EMBED_DIR, FAISS_DIR, LLM_MERGED_DIR, YOLO_WEIGHTS)
+                                 EMBED_DIR, FAISS_DIR, LLM_MERGED_DIR, PGVECTOR_TABLE,
+                                 PGVECTOR_URL, YOLO_WEIGHTS)
 from plant_doctor.knowledge import entry_to_answer, entry_to_text, is_healthy, lookup
 from plant_doctor.prompts import build_messages, format_context
 
@@ -43,20 +44,37 @@ class PlantDoctorPipeline:
         return self.yolo
 
     def load_vector_store(self) -> Any:
+        # 1. Ưu tiên kết nối PostgreSQL (pgvector) nếu có URL
+        if PGVECTOR_URL:
+            try:
+                from plant_doctor.rag.pgvector_store import PGVectorStore
+                from langchain_huggingface import HuggingFaceEmbeddings
+                self.pg_store = PGVectorStore(connection_url=PGVECTOR_URL, table_name=PGVECTOR_TABLE)
+                self.embeddings = HuggingFaceEmbeddings(
+                    model_name=str(EMBED_DIR),
+                    model_kwargs={"device": "cuda" if torch.cuda.is_available() else "cpu"},
+                    encode_kwargs={"normalize_embeddings": True},
+                )
+                self.vector_store = self.pg_store
+                return self.vector_store
+            except Exception as e:
+                pass
+
+        # 2. Fallback sang FAISS cục bộ
         if not FAISS_DIR.exists() or not EMBED_DIR.exists():
             return None
         from langchain_community.vectorstores import FAISS
         from langchain_community.vectorstores.utils import DistanceStrategy
         from langchain_huggingface import HuggingFaceEmbeddings
 
-        embeddings = HuggingFaceEmbeddings(
+        self.embeddings = HuggingFaceEmbeddings(
             model_name=str(EMBED_DIR),
             model_kwargs={"device": "cuda" if torch.cuda.is_available() else "cpu"},
             encode_kwargs={"normalize_embeddings": True},
         )
         self.vector_store = FAISS.load_local(
             str(FAISS_DIR),
-            embeddings,
+            self.embeddings,
             allow_dangerous_deserialization=True,
             distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
         )
@@ -98,15 +116,25 @@ class PlantDoctorPipeline:
         return diagnosis, annotated
 
     def retrieve_context(self, query: str, keys: list[str], max_docs: int = DEFAULT_MAX_CONTEXT_DOCS) -> list:
-        """Truy xuất lai: lọc theo key YOLO + tìm kiếm tương đồng ngữ nghĩa."""
+        """Truy xuất lai: lọc theo key YOLO + tìm kiếm tương đồng ngữ nghĩa (hỗ trợ cả FAISS & pgvector)."""
         if self.vector_store is None:
-            # Chế độ dự phòng khi thiếu FAISS
+            # Chế độ dự phòng khi thiếu Vector DB
             return [entry_to_text(e) for e in (lookup(k) for k in keys) if e]
 
+        from plant_doctor.rag.pgvector_store import PGVectorStore
         docs, seen = [], set()
-        for key in keys:
-            docs += self.vector_store.similarity_search(query, k=1, filter={"key": key}, fetch_k=100)
-        docs += self.vector_store.similarity_search(query, k=max_docs)
+
+        if isinstance(self.vector_store, PGVectorStore):
+            # Truy vấn PostgreSQL pgvector
+            query_emb = self.embeddings.embed_query(query)
+            for key in keys:
+                docs += self.vector_store.similarity_search(query_emb, k=1, filter_key=key)
+            docs += self.vector_store.similarity_search(query_emb, k=max_docs)
+        else:
+            # Truy vấn FAISS
+            for key in keys:
+                docs += self.vector_store.similarity_search(query, k=1, filter={"key": key}, fetch_k=100)
+            docs += self.vector_store.similarity_search(query, k=max_docs)
 
         unique = []
         for d in docs:
