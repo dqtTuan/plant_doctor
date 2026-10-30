@@ -186,9 +186,10 @@ sequenceDiagram
 3. **Cơ chế Dual Vector Store**:
    `PlantDoctorPipeline` ưu tiên truy vấn tương đồng từ `PGVectorStore` (toán tử Cosine `<=>` kết hợp lọc `metadata->>'key' = ...`) nếu có `PGVECTOR_URL`. Nếu không có kết nối cơ sở dữ liệu, hệ thống tự động fallback về FAISS cục bộ để đảm bảo 100% tính độc lập và offline.
 
-## 📖 Kiến Trúc Unstructured RAG (Hoàn toàn không phụ thuộc JSON)
+## 📖 Kiến Trúc Unstructured RAG & Zero Mock Data (Dựa 100% Vào Tài Liệu Người Dùng)
 
-Hệ thống hoạt động theo kiến trúc **Unstructured RAG mở**:
-- **Không phụ thuộc vào file JSON tĩnh**: Tri thức được nạp tự do từ các tài liệu văn bản chuyên ngành (`.md`, `.txt`, `.pdf`) đặt trong `data/knowledge_base/` (mặc định có sẵn `cam_nang_benh_cay_trong.md`).
-- **Query Expansion**: Khi YOLO phát hiện bệnh, module `query_expansion.py` tự động dịch và mở rộng nhãn (`Crop___Disease`) thành câu truy vấn ngữ nghĩa nông nghiệp phong phú (tiếng Việt/tiếng Anh).
-- **Open Semantic Retrieval**: Tìm kiếm tương đồng vector trực tiếp trên PostgreSQL `pgvector` hoặc FAISS mà không cần bộ lọc metadata cứng, giúp hệ thống có thể trả lời các câu hỏi về bất kỳ loại bệnh/cây trồng nào có trong tài liệu.
+Hệ thống hoạt động theo nguyên tắc **Zero Mock Data** và **Strict Grounding**:
+- **100% Dữ liệu thực tế của bạn**: Không sử dụng mock data, file JSON cứng hay câu trả lời dựng sẵn. Thư mục `data/knowledge_base/` dành riêng để bạn nạp các file tài liệu chuyên ngành (`.pdf`, `.md`, `.txt`).
+- **Nạp tài liệu trực tiếp trên Web UI**: Người dùng có thể kéo thả tài liệu và bấm *"📥 Nạp vào Vector DB"* ngay trên Sidebar của giao diện Streamlit, hệ thống sẽ tự động phân đoạn theo ngữ nghĩa (Semantic Chunking) và cập nhật tức thì.
+- **Strict Grounding**: LLM chỉ được phép trả lời dựa trên những gì có trong tài liệu người dùng đã nạp. Nếu trong tài liệu không có thông tin về bệnh được hỏi, mô hình sẽ dứt khoát từ chối và hướng dẫn nạp thêm tài liệu, tuyệt đối không bịa đặt.
+- **Query Expansion**: Tự động chuyển đổi nhãn phát hiện từ YOLO (`Crop___Disease`) thành câu hỏi ngữ nghĩa nông nghiệp tự nhiên để truy xuất chính xác các đoạn văn liên quan trong Vector DB (FAISS / PostgreSQL `pgvector`).
