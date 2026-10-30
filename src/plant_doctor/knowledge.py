@@ -1,10 +1,9 @@
-"""Kho tri thức: tra cứu bệnh theo nhãn YOLO và định dạng văn bản từ diseases.json."""
-import difflib
-import json
-import re
-from functools import lru_cache
+"""Kho tri thức và chuẩn hóa nhãn bệnh cây trồng (hoàn toàn không phụ thuộc vào file JSON).
 
-from plant_doctor.config import KB_JSON
+Tự động phân tích nhãn YOLO và định dạng văn bản phục vụ hiển thị và suy luận.
+"""
+import re
+from plant_doctor.rag.query_expansion import parse_label, normalize_label
 
 SECTIONS = [
     ("symptoms", "Triệu chứng"),
@@ -15,71 +14,69 @@ SECTIONS = [
 ]
 
 
-# ---------------------------------------------------------------- Kho tri thức
 def normalize(name: str) -> str:
     """'Corn_(maize)___Common_rust_' -> 'corn_maize_common_rust'."""
-    s = re.sub(r"[^0-9a-z]+", "_", name.lower())
-    return re.sub(r"_+", "_", s).strip("_")
+    return normalize_label(name)
 
 
-@lru_cache(maxsize=1)
 def load_kb() -> list:
-    return json.loads(KB_JSON.read_text(encoding="utf-8"))
-
-
-@lru_cache(maxsize=1)
-def _alias_index() -> dict:
-    index = {}
-    for e in load_kb():
-        for alias in [e["key"], e["name_en"], *e.get("aliases", [])]:
-            index.setdefault(normalize(alias), e)
-    return index
+    """Trả về danh sách rỗng vì tri thức đã được chuyển đổi hoàn toàn sang tài liệu Markdown/PDF."""
+    return []
 
 
 def is_healthy(class_name: str) -> bool:
+    """Kiểm tra xem nhãn nhận diện có phải là cây khỏe mạnh hay không."""
     return "healthy" in normalize(class_name).split("_")
 
 
-def lookup(class_name: str):
-    """Ánh xạ nhãn YOLO -> mục trong kho tri thức (khớp chính xác, rồi khớp gần đúng)."""
-    n = normalize(class_name)
-    index = _alias_index()
-    if is_healthy(n):
-        return index.get("healthy")
-    if n in index:
-        return index[n]
-    match = difflib.get_close_matches(n, list(index), n=1, cutoff=0.75)
-    return index[match[0]] if match else None
+def lookup(class_name: str) -> dict:
+    """Ánh xạ nhãn YOLO -> thực thể bệnh học bằng thuật toán phân tích nhãn động."""
+    info = parse_label(class_name)
+    # Tương thích với các khóa cũ (name_vi, name_en)
+    info["name_vi"] = info["disease_vi"]
+    info["name_en"] = info["disease_en"]
+    return info
 
 
-# ---------------------------------------------------------------- Định dạng
 def title(e: dict) -> str:
-    return f"{e['name_vi']} ({e['name_en']}) – {e['crop_vi']} ({e['crop_en']})"
+    """Tạo tiêu đề chuẩn hóa cho bệnh cây."""
+    name_vi = e.get("name_vi") or e.get("disease_vi", "")
+    name_en = e.get("name_en") or e.get("disease_en", "")
+    crop_vi = e.get("crop_vi", "")
+    crop_en = e.get("crop_en", "")
+    return f"{name_vi} ({name_en}) – {crop_vi} ({crop_en})"
 
 
 def section_text(e: dict, field: str) -> str:
-    label = dict(SECTIONS)[field]
-    return f"{title(e)}\n{label}: {e[field]}"
+    label = dict(SECTIONS).get(field, field)
+    val = e.get(field, "Xem chi tiết trong cẩm nang hướng dẫn.")
+    return f"{title(e)}\n{label}: {val}"
 
 
 def entry_to_text(e: dict) -> str:
-    """Văn bản đầy đủ của một bệnh – dùng làm tài liệu trong FAISS."""
-    lines = [f"Bệnh: {title(e)}", f"Tác nhân: {e['pathogen']}"]
-    lines += [f"{label}: {e[field]}" for field, label in SECTIONS]
+    """Văn bản tổng quan của một bệnh."""
+    lines = [f"Bệnh: {title(e)}", f"Tác nhân: {e.get('pathogen', 'Nấm hoặc vi khuẩn gây hại')}"]
+    for field, label in SECTIONS:
+        if field in e:
+            lines.append(f"{label}: {e[field]}")
     return "\n".join(lines)
 
 
 def entry_to_answer(e: dict, focus: str = "full") -> str:
-    """Câu trả lời mẫu có cấu trúc (dùng làm nhãn huấn luyện LLM và chế độ dự phòng)."""
+    """Câu trả lời mẫu có cấu trúc."""
     parts = []
-    if focus in ("full", "symptoms"):
+    if "symptoms" in e and focus in ("full", "symptoms"):
         parts.append(f"**Triệu chứng:** {e['symptoms']}")
-    if focus in ("full", "causes"):
-        parts.append(f"**Nguyên nhân:** {e['pathogen']}. {e['causes']}")
-    if focus in ("full", "treatment"):
+    if "causes" in e and focus in ("full", "causes"):
+        parts.append(f"**Nguyên nhân:** {e.get('pathogen', '')}. {e['causes']}")
+    if "bio_treatment" in e and focus in ("full", "treatment"):
         parts.append(f"**Phác đồ sinh học:** {e['bio_treatment']}")
+    if "chemical_note" in e and focus in ("full", "treatment"):
         parts.append(f"**Thuốc hóa học (chỉ khi thật cần thiết):** {e['chemical_note']}")
-    if focus in ("full", "treatment", "prevention"):
+    if "prevention" in e and focus in ("full", "treatment", "prevention"):
         parts.append(f"**Phòng ngừa:** {e['prevention']}")
-    return f"**{title(e)}**\n\n" + "\n\n".join(parts)
 
+    if not parts:
+        parts.append(f"Thông tin chi tiết về phác đồ điều trị của {title(e)} được truy xuất tự động từ cẩm nang tài liệu chuyên ngành.")
+
+    return f"**{title(e)}**\n\n" + "\n\n".join(parts)
