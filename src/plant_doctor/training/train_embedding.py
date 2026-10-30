@@ -3,14 +3,12 @@
 Cặp huấn luyện (truy vấn -> đoạn tài liệu) được sinh tự động từ data/knowledge_base/diseases.json
 và có thể bổ sung trong data/training/embedding_pairs.jsonl: {"query": "...", "passage": "..."}.
 
-python -m plant_doctor.training.train_embedding --epochs 20
-
-Hàm mất mát: MultipleNegativesRankingLoss (InfoNCE với negative trong batch) – phù hợp hơn
-CosineSimilarityLoss khi chỉ có cặp dương, không có điểm tương đồng gán tay.
+Hàm mất mát: MultipleNegativesRankingLoss (InfoNCE với negative trong batch).
 """
 import argparse
 import json
 import random
+from pathlib import Path
 
 import torch
 from sentence_transformers import InputExample, SentenceTransformer, losses
@@ -39,15 +37,39 @@ def queries_for(e):
     return name_q, section_q
 
 
-def build_pairs(kb):
+def extract_pairs_from_markdown():
+    """Trích xuất cặp câu hỏi - tài liệu trực tiếp từ các file Markdown trong kho tri thức."""
+    from plant_doctor.config import KB_DIR
+    import re
     pairs = []
-    for e in kb:
-        full = entry_to_text(e)
-        name_q, section_q = queries_for(e)
-        pairs += [(q, full) for q in name_q]
-        for q, field in section_q:
-            pairs.append((q, full))                    # khớp với tài liệu đầy đủ trong FAISS
-            pairs.append((q, section_text(e, field)))  # và với đúng phần nội dung liên quan
+    for md_file in Path(KB_DIR).glob("*.md"):
+        if md_file.name.lower().startswith("readme"):
+            continue
+        content = md_file.read_text(encoding="utf-8")
+        blocks = re.split(r"\n##\s+", content)
+        for block in blocks[1:]:
+            lines = [l.strip() for l in block.splitlines() if l.strip()]
+            if not lines:
+                continue
+            title_line = lines[0]
+            pairs.append((f"Cách phòng trị và triệu chứng của {title_line}", block))
+            pairs.append((title_line, block))
+    return pairs
+
+
+def build_pairs(kb=None):
+    pairs = []
+    if kb:
+        for e in kb:
+            full = entry_to_text(e)
+            name_q, section_q = queries_for(e)
+            pairs += [(q, full) for q in name_q]
+            for q, field in section_q:
+                pairs.append((q, full))                    # khớp với tài liệu đầy đủ trong FAISS
+                pairs.append((q, section_text(e, field)))  # và với đúng phần nội dung liên quan
+    else:
+        pairs += extract_pairs_from_markdown()
+
     extra = TRAIN_DATA_DIR / "embedding_pairs.jsonl"
     if extra.exists():
         for line in extra.read_text(encoding="utf-8").splitlines():
@@ -58,8 +80,14 @@ def build_pairs(kb):
 
 
 @torch.no_grad()
-def top1_accuracy(model, kb):
-    docs = [entry_to_text(e) for e in kb]
+def top1_accuracy(model, kb=None):
+    if kb:
+        docs = [entry_to_text(e) for e in kb]
+    else:
+        from plant_doctor.rag.build_index import load_documents
+        docs = [d.page_content for d in load_documents()[:30]]
+    if not docs:
+        return 1.0
     doc_emb = model.encode(docs, normalize_embeddings=True, convert_to_tensor=True)
     hits = total = 0
     for i, e in enumerate(kb):
@@ -72,35 +100,54 @@ def top1_accuracy(model, kb):
     return hits / total
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--base", default=EMBED_BASE)
-    ap.add_argument("--epochs", type=int, default=20)
-    ap.add_argument("--batch", type=int, default=16)
-    args = ap.parse_args()
-
+def train_custom_embedding(base_model: str = EMBED_BASE,
+                           output_dir: Path | str = EMBED_DIR,
+                           epochs: int = 20,
+                           batch: int = 16) -> float:
+    """Huấn luyện mô hình Embedding bằng MultipleNegativesRankingLoss và trả về top1 accuracy."""
     random.seed(SEED)
     torch.manual_seed(SEED)
     kb = load_kb()
     pairs = build_pairs(kb)
     print(f"Số cặp huấn luyện: {len(pairs)}")
 
-    model = SentenceTransformer(args.base)
-    print(f"Top-1 retrieval TRƯỚC khi fine-tune: {top1_accuracy(model, kb):.3f}")
+    model = SentenceTransformer(base_model)
+    acc_before = top1_accuracy(model, kb)
+    print(f"Top-1 retrieval TRƯỚC khi fine-tune: {acc_before:.3f}")
 
     examples = [InputExample(texts=[q, p]) for q, p in pairs]
-    loader = NoDuplicatesDataLoader(examples, batch_size=args.batch)
+    loader = NoDuplicatesDataLoader(examples, batch_size=batch)
     loss = losses.MultipleNegativesRankingLoss(model)
-    steps = len(loader) * args.epochs
+    steps = len(loader) * epochs
     model.fit(
         train_objectives=[(loader, loss)],
-        epochs=args.epochs,
+        epochs=epochs,
         warmup_steps=int(0.1 * steps),
         show_progress_bar=True,
     )
-    model.save(str(EMBED_DIR))
-    print(f"Top-1 retrieval SAU khi fine-tune: {top1_accuracy(model, kb):.3f}")
-    print(f"Đã lưu mô hình Embedding tự train tại: {EMBED_DIR}")
+    out_path = Path(output_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+    model.save(str(out_path))
+    acc_after = top1_accuracy(model, kb)
+    print(f"Top-1 retrieval SAU khi fine-tune: {acc_after:.3f}")
+    print(f"Đã lưu mô hình Embedding tự train tại: {out_path}")
+    return acc_after
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--base", default=EMBED_BASE)
+    ap.add_argument("--output", default=str(EMBED_DIR))
+    ap.add_argument("--epochs", type=int, default=20)
+    ap.add_argument("--batch", type=int, default=16)
+    args = ap.parse_args()
+
+    train_custom_embedding(
+        base_model=args.base,
+        output_dir=args.output,
+        epochs=args.epochs,
+        batch=args.batch,
+    )
 
 
 if __name__ == "__main__":

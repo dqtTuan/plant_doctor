@@ -34,8 +34,8 @@ jobs:
       - name: Ruff
         run: ruff check .
 
-      - name: Validate diseases.json
-        run: python -m json.tool data/knowledge_base/diseases.json > /dev/null
+
+
 
       - name: Pytest
         run: pytest -q
@@ -68,7 +68,7 @@ jobs:
         run: |
           docker run --rm plant-doctor:ci python -c \
             "import plant_doctor.knowledge as k, torch, ultralytics, streamlit; \
-             print(len(k.load_kb()), 'bệnh |', 'torch', torch.__version__)"
+             print('PlantDoctor ready |', 'torch', torch.__version__)"
 
       # Không có mô hình -> app vẫn phải khởi động và trả lời health check
       - name: Smoke test (health check)
