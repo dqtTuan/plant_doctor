@@ -26,6 +26,8 @@ def load_documents(kb_dir: Path | str = KB_DIR) -> list[Document]:
     kb_path = Path(kb_dir)
     docs = []
     for path in sorted(kb_path.rglob("*")):
+        if path.name.lower().startswith("readme"):
+            continue
         suffix = path.suffix.lower()
         if suffix == ".pdf":
             from pypdf import PdfReader

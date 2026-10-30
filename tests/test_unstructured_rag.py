@@ -1,18 +1,16 @@
 import pytest
-from unittest.mock import MagicMock
 from langchain_core.documents import Document
 from plant_doctor.rag.build_index import load_documents, chunk_documents_by_type
-from plant_doctor.config import KB_DIR
 
 
-def test_load_documents_from_markdown():
-    docs = load_documents(KB_DIR)
+def test_load_documents_from_user_directory(tmp_path):
+    user_file = tmp_path / "tai_lieu_lua.md"
+    user_file.write_text("# Cẩm nang bệnh lúa\n\nBệnh đạo ôn lúa do nấm Pyricularia oryzae gây ra.", encoding="utf-8")
+    
+    docs = load_documents(tmp_path)
     assert len(docs) >= 1
-    # Kiểm tra đã nạp cẩm nang markdown
-    assert any("cam_nang" in d.metadata.get("source", "").lower() for d in docs)
-    # Nội dung có chứa tri thức
-    sample = [d for d in docs if "cam_nang" in d.metadata.get("source", "").lower()][0]
-    assert "CẨM NANG" in sample.page_content
+    assert docs[0].metadata["source"] == "tai_lieu_lua.md"
+    assert "đạo ôn lúa" in docs[0].page_content
 
 
 def test_chunk_documents_without_any_json():

@@ -28,6 +28,8 @@ class DocumentManager:
         """Liệt kê toàn bộ các tài liệu thực tế trong kho tri thức."""
         results = []
         for p in sorted(self.kb_dir.iterdir()):
+            if p.name.lower().startswith("readme"):
+                continue
             if p.is_file() and p.suffix.lower() in (".pdf", ".md", ".txt"):
                 stat = p.stat()
                 results.append({

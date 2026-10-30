@@ -43,6 +43,8 @@ def extract_pairs_from_markdown():
     import re
     pairs = []
     for md_file in Path(KB_DIR).glob("*.md"):
+        if md_file.name.lower().startswith("readme"):
+            continue
         content = md_file.read_text(encoding="utf-8")
         blocks = re.split(r"\n##\s+", content)
         for block in blocks[1:]:
