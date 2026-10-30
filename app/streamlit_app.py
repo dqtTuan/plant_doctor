@@ -76,6 +76,38 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
+    st.divider()
+    st.subheader("📚 Kho Tri Thức Người Dùng")
+    from plant_doctor.rag.document_manager import DocumentManager
+    doc_mgr = DocumentManager()
+    uploaded_kb = st.file_uploader(
+        "Tải lên tài liệu thực tế (.pdf, .md, .txt)",
+        type=["pdf", "md", "txt"],
+        key="kb_uploader",
+    )
+    if uploaded_kb is not None:
+        if st.button("📥 Nạp vào Vector DB", use_container_width=True):
+            with st.spinner("Đang xử lý và phân đoạn tri thức..."):
+                doc_mgr.save_uploaded_file(uploaded_kb.name, uploaded_kb.getvalue())
+                if pipeline.vector_store and pipeline.embeddings:
+                    n_chunks = doc_mgr.ingest_file(uploaded_kb.name, pipeline.vector_store, pipeline.embeddings)
+                    st.success(f"Đã nạp {n_chunks} đoạn tri thức từ '{uploaded_kb.name}' vào Vector DB!")
+                else:
+                    st.success(f"Đã lưu '{uploaded_kb.name}'.")
+                st.rerun()
+
+    user_docs = doc_mgr.list_user_documents()
+    if user_docs:
+        with st.expander(f"Tài liệu đã nạp ({len(user_docs)})"):
+            for d in user_docs:
+                col_name, col_del = st.columns([4, 1])
+                col_name.caption(f"📄 {d['name']} ({d['size_kb']} KB)")
+                if col_del.button("❌", key=f"del_{d['name']}", help="Xóa tài liệu này"):
+                    doc_mgr.delete_document(d["name"])
+                    st.rerun()
+    else:
+        st.caption("Chưa có tài liệu nào. Hãy tải lên tài liệu PDF/MD thực tế của bạn!")
+
 if pipeline.yolo is None:
     st.error("Không tìm thấy trọng số YOLO. Hãy chạy `python -m plant_doctor.training.train_yolo` trước.")
     st.stop()
