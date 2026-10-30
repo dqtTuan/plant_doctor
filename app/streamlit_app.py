@@ -7,12 +7,13 @@ import streamlit as st
 import torch
 from PIL import Image
 
+from plant_doctor.config import DEFAULT_MAX_CONTEXT_DOCS, DEFAULT_MAX_NEW_TOKENS
 from plant_doctor.knowledge import is_healthy
 from plant_doctor.pipeline import PlantDoctorPipeline
 from plant_doctor.prompts import build_messages, format_context
 
 MEMORY_K = 3         # số lượt hội thoại gần nhất đưa vào prompt (window memory)
-MAX_CONTEXT_DOCS = 4
+MAX_CONTEXT_DOCS = DEFAULT_MAX_CONTEXT_DOCS
 
 st.set_page_config(page_title="Plant Doctor – Chẩn đoán bệnh cây trồng 100% Offline",
                    page_icon="🌿", layout="wide")
@@ -60,7 +61,7 @@ pipeline = get_pipeline()
 with st.sidebar:
     st.header("⚙️ Cấu hình")
     conf_thr = st.slider("Ngưỡng tin cậy YOLO", 0.10, 0.90, 0.40, 0.05)
-    max_new_tokens = st.slider("Độ dài câu trả lời tối đa (token)", 128, 1024, 512, 64)
+    max_new_tokens = st.slider("Độ dài câu trả lời tối đa (token)", 128, 1024, DEFAULT_MAX_NEW_TOKENS, 32)
     st.divider()
     st.subheader("Trạng thái mô hình")
     st.write(("✅" if pipeline.yolo else "❌") + " YOLOv8 (`best.pt`)")

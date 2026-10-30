@@ -15,7 +15,8 @@ import numpy as np
 import torch
 from PIL import Image
 
-from plant_doctor.config import EMBED_DIR, FAISS_DIR, LLM_MERGED_DIR, YOLO_WEIGHTS
+from plant_doctor.config import (DEFAULT_MAX_CONTEXT_DOCS, DEFAULT_MAX_NEW_TOKENS,
+                                 EMBED_DIR, FAISS_DIR, LLM_MERGED_DIR, YOLO_WEIGHTS)
 from plant_doctor.knowledge import entry_to_answer, entry_to_text, is_healthy, lookup
 from plant_doctor.prompts import build_messages, format_context
 
@@ -96,7 +97,7 @@ class PlantDoctorPipeline:
         annotated = res.plot()[:, :, ::-1]  # Convert BGR to RGB
         return diagnosis, annotated
 
-    def retrieve_context(self, query: str, keys: list[str], max_docs: int = 4) -> list:
+    def retrieve_context(self, query: str, keys: list[str], max_docs: int = DEFAULT_MAX_CONTEXT_DOCS) -> list:
         """Truy xuất lai: lọc theo key YOLO + tìm kiếm tương đồng ngữ nghĩa."""
         if self.vector_store is None:
             # Chế độ dự phòng khi thiếu FAISS
@@ -115,7 +116,7 @@ class PlantDoctorPipeline:
                 unique.append(d)
         return unique[:max_docs]
 
-    def stream_answer(self, messages: list[dict], max_new_tokens: int = 512) -> Iterator[str]:
+    def stream_answer(self, messages: list[dict], max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS) -> Iterator[str]:
         """Sinh chuỗi câu trả lời streaming từ mô hình ngôn ngữ."""
         if self.llm is None or self.tokenizer is None:
             return

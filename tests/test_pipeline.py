@@ -22,3 +22,9 @@ def test_pipeline_retrieve_without_store():
     assert len(docs) > 0
     doc_str = docs[0] if isinstance(docs[0], str) else docs[0].page_content
     assert "coffee" in doc_str.lower() or "cà phê" in doc_str.lower()
+
+
+def test_pipeline_default_optimization_constants():
+    from plant_doctor.config import DEFAULT_MAX_CONTEXT_DOCS, DEFAULT_MAX_NEW_TOKENS
+    assert DEFAULT_MAX_CONTEXT_DOCS == 2
+    assert DEFAULT_MAX_NEW_TOKENS == 256

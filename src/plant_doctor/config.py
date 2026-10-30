@@ -39,3 +39,7 @@ FAISS_DIR = ROOT / "vector_store" / "faiss_index"
 
 SEED = 42
 
+
+# --- Tối ưu hóa suy luận (Inference Latency) ---
+DEFAULT_MAX_CONTEXT_DOCS = 2
+DEFAULT_MAX_NEW_TOKENS = 256
