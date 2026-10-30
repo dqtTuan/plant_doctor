@@ -13,7 +13,7 @@ plant_doctor/
 │   ├── raw/<ten_lop>/*.jpg         # ảnh có nhãn phân loại (PlantVillage...) – đầu vào bước 0
 │   ├── yolo/                       # dataset YOLO (data.yaml + train/valid/test)
 │   ├── knowledge_base/
-│   │   ├── diseases.json           # tri thức có cấu trúc: triệu chứng → nguyên nhân → điều trị → phòng ngừa
+│   │   ├── cam_nang_benh_cay_trong.md # cẩm nang tri thức chuyên sâu (Markdown)
 │   │   └── *.pdf / *.md / *.txt    # (tuỳ chọn) tài liệu bạn tự biên soạn
 │   └── training/                   # (tuỳ chọn) embedding_pairs.jsonl, llm_extra.jsonl
 ├── models/                         # (gitignore)
@@ -80,7 +80,7 @@ streamlit run app/streamlit_app.py
 ```
 
 App tự đặt `HF_HUB_OFFLINE=1`, không kết nối mạng. Nếu thiếu LLM, app vẫn trả lời bằng tri thức
-có cấu trúc trong `diseases.json`; nếu thiếu FAISS, app tra cứu trực tiếp theo nhãn YOLO.
+chuyên sâu từ cẩm nang Markdown; nếu thiếu FAISS, app tra cứu trực tiếp theo nhãn YOLO.
 
 ## Docker
 
@@ -185,3 +185,10 @@ sequenceDiagram
 
 3. **Cơ chế Dual Vector Store**:
    `PlantDoctorPipeline` ưu tiên truy vấn tương đồng từ `PGVectorStore` (toán tử Cosine `<=>` kết hợp lọc `metadata->>'key' = ...`) nếu có `PGVECTOR_URL`. Nếu không có kết nối cơ sở dữ liệu, hệ thống tự động fallback về FAISS cục bộ để đảm bảo 100% tính độc lập và offline.
+
+## 📖 Kiến Trúc Unstructured RAG (Hoàn toàn không phụ thuộc JSON)
+
+Hệ thống hoạt động theo kiến trúc **Unstructured RAG mở**:
+- **Không phụ thuộc vào file JSON tĩnh**: Tri thức được nạp tự do từ các tài liệu văn bản chuyên ngành (`.md`, `.txt`, `.pdf`) đặt trong `data/knowledge_base/` (mặc định có sẵn `cam_nang_benh_cay_trong.md`).
+- **Query Expansion**: Khi YOLO phát hiện bệnh, module `query_expansion.py` tự động dịch và mở rộng nhãn (`Crop___Disease`) thành câu truy vấn ngữ nghĩa nông nghiệp phong phú (tiếng Việt/tiếng Anh).
+- **Open Semantic Retrieval**: Tìm kiếm tương đồng vector trực tiếp trên PostgreSQL `pgvector` hoặc FAISS mà không cần bộ lọc metadata cứng, giúp hệ thống có thể trả lời các câu hỏi về bất kỳ loại bệnh/cây trồng nào có trong tài liệu.
