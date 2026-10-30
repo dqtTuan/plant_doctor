@@ -43,3 +43,8 @@ SEED = 42
 # --- Tối ưu hóa suy luận (Inference Latency) ---
 DEFAULT_MAX_CONTEXT_DOCS = 2
 DEFAULT_MAX_NEW_TOKENS = 256
+
+
+# --- PostgreSQL (pgvector) ---
+PGVECTOR_URL = os.environ.get("PGVECTOR_URL", "")
+PGVECTOR_TABLE = "plant_doctor_embeddings"
