@@ -115,25 +115,31 @@ class PlantDoctorPipeline:
         annotated = res.plot()[:, :, ::-1]  # Convert BGR to RGB
         return diagnosis, annotated
 
-    def retrieve_context(self, query: str, keys: list[str], max_docs: int = DEFAULT_MAX_CONTEXT_DOCS) -> list:
-        """Truy xuất lai: lọc theo key YOLO + tìm kiếm tương đồng ngữ nghĩa (hỗ trợ cả FAISS & pgvector)."""
+    def retrieve_context(self, query: str, keys: list[str] | None = None, max_docs: int = DEFAULT_MAX_CONTEXT_DOCS) -> list:
+        """Truy xuất lai / Open Semantic Retrieval từ Vector Store (hỗ trợ cả FAISS & pgvector)."""
+        keys = keys or []
         if self.vector_store is None:
             # Chế độ dự phòng khi thiếu Vector DB
             return [entry_to_text(e) for e in (lookup(k) for k in keys) if e]
 
         from plant_doctor.rag.pgvector_store import PGVectorStore
+        from plant_doctor.rag.query_expansion import label_to_query
         docs, seen = [], set()
 
+        # 1. Mở rộng truy vấn theo nhãn phát hiện từ YOLO nếu có
+        for key in keys:
+            expanded_q = label_to_query(key)
+            if isinstance(self.vector_store, PGVectorStore):
+                query_emb = self.embeddings.embed_query(expanded_q)
+                docs += self.vector_store.similarity_search(query_emb, k=1)
+            else:
+                docs += self.vector_store.similarity_search(expanded_q, k=1)
+
+        # 2. Open Semantic Search theo câu hỏi trực tiếp của người dùng
         if isinstance(self.vector_store, PGVectorStore):
-            # Truy vấn PostgreSQL pgvector
             query_emb = self.embeddings.embed_query(query)
-            for key in keys:
-                docs += self.vector_store.similarity_search(query_emb, k=1, filter_key=key)
             docs += self.vector_store.similarity_search(query_emb, k=max_docs)
         else:
-            # Truy vấn FAISS
-            for key in keys:
-                docs += self.vector_store.similarity_search(query, k=1, filter={"key": key}, fetch_k=100)
             docs += self.vector_store.similarity_search(query, k=max_docs)
 
         unique = []

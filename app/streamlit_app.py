@@ -68,7 +68,7 @@ with st.sidebar:
     st.write(("✅" if pipeline.vector_store else "⚠️") + " Embedding + FAISS")
     st.write(("✅" if pipeline.llm else "⚠️") + " LLM LoRA cục bộ")
     if not pipeline.vector_store:
-        st.caption("Thiếu FAISS → dùng trực tiếp diseases.json.")
+        st.caption("Thiếu Vector DB → dùng thông tin phân tích nhãn.")
     if not pipeline.llm:
         st.caption("Thiếu LLM → trả lời bằng tri thức có cấu trúc (không sinh văn bản).")
     st.caption(f"Thiết bị: {'GPU ' + torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
@@ -122,7 +122,7 @@ def answer(question: str) -> str:
 
     with st.expander(f"📚 Nguồn tri thức đã truy xuất ({len(texts)})"):
         for i, d in enumerate(docs, 1):
-            src = "diseases.json" if isinstance(d, str) else d.metadata.get("source", "")
+            src = d.metadata.get("source", "Tài liệu chuyên môn") if hasattr(d, "metadata") else "Tài liệu tham khảo"
             page = "" if isinstance(d, str) else d.metadata.get("page", "")
             st.markdown(f"**[{i}] {src}** {f'– trang {page}' if page else ''}")
             st.caption((d if isinstance(d, str) else d.page_content)[:600])

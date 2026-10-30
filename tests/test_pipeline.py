@@ -51,3 +51,16 @@ def test_get_cached_answer_returns_none_for_free_question():
     diagnosis = [("Rust", 0.92, None)]
     cached = pipeline.get_cached_answer("Hôm nay trời đẹp không?", diagnosis)
     assert cached is None
+
+
+def test_retrieve_context_open_semantic_search():
+    pipeline = PlantDoctorPipeline(load_models=False)
+    mock_store = MagicMock()
+    mock_doc = MagicMock()
+    mock_doc.page_content = "Tài liệu chuyên sâu về nấm bệnh từ file cẩm nang Markdown."
+    mock_store.similarity_search.return_value = [mock_doc]
+    pipeline.vector_store = mock_store
+
+    docs = pipeline.retrieve_context("Cách phòng trừ bệnh", keys=[])
+    assert len(docs) == 1
+    assert "cẩm nang Markdown" in (docs[0].page_content if hasattr(docs[0], "page_content") else docs[0])
