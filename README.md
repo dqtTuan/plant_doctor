@@ -28,6 +28,7 @@ plant_doctor/
 │   ├── config.py                   # toàn bộ đường dẫn & tên mô hình
 │   ├── knowledge.py                # tra cứu & định dạng kho tri thức
 │   ├── prompts.py                  # system prompt + build_messages (dùng chung train/suy luận)
+│   ├── pipeline.py                 # Service Engine: chẩn đoán YOLO, Hybrid RAG & LLM streaming
 │   ├── data/prepare_dataset.py     # Bước 0: phân loại → YOLO detection, tự sinh bounding box
 │   ├── training/
 │   │   ├── train_yolo.py           # Bước 1
