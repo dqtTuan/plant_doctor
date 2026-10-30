@@ -97,6 +97,15 @@ def history_pairs() -> list:
 def answer(question: str) -> str:
     """Hiển thị câu trả lời (stream) trong khung chat hiện tại và trả về chuỗi kết quả."""
     diag = st.session_state.diagnosis
+
+    # 1. Tối ưu độ trễ: Kiểm tra Cache phản hồi chuẩn (tức thì 0.01s cho nút Xuất phác đồ)
+    cached_text = pipeline.get_cached_answer(question, diag)
+    if cached_text:
+        st.markdown(cached_text)
+        st.caption("⚡ Phản hồi tức thì từ Kho tri thức đã chuẩn hóa (0.01s)")
+        return cached_text
+
+    # 2. Truy xuất RAG và suy luận LLM cho câu hỏi tự do
     keys = [e["key"] for _, _, e in diag if e]
     names = ", ".join(c for c, _, _ in diag)
     query = f"{question} {names}".strip()
