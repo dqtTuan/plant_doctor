@@ -139,3 +139,49 @@ Phát hành phiên bản mới: `git tag v0.1.0 && git push origin v0.1.0`.
 - **Context Pruning**: Rút gọn ngữ cảnh tài liệu từ 4 xuống 2 đoạn tinh tuyển nhất, giảm tải 50% độ trễ đọc Prompt ban đầu.
 - **Response Caching (0.01s)**: Phản hồi ngay lập tức cho các yêu cầu xuất phác đồ định sẵn từ YOLO qua hàm get_cached_answer.
 - **Token Limit Tuning**: Mặc định max_new_tokens=256 súc tích, phản hồi nhanh chóng.
+
+## 🧬 Semantic Chunking & Vector Database (PostgreSQL + pgvector)
+
+Hệ thống hỗ trợ phân đoạn tài liệu theo **ngữ nghĩa (Semantic Chunking)** và lưu trữ vector vào **PostgreSQL với extension `pgvector`**, cho phép tìm kiếm tương đồng vector kèm bộ lọc thuộc tính chính xác (`metadata JSONB`).
+
+### Sơ đồ luồng xử lý (Sequence Diagram)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant DocSource as Document Source
+    participant RAG as RAG System
+    participant Chunker as Generate Chunks Function<br/>(Semantic)
+    participant Embed as Generate Embeddings Function
+    participant VectorDB as Document DB<br/>(PostgreSQL pgvector)
+
+    DocSource->>RAG: RAG Read Docs From the Source
+    RAG->>Chunker: Send Docs to Chunk Function
+    Note over Chunker: Tính cosine distance giữa các câu liên tiếp,<br/>phát hiện semantic break (phân vị 85%)
+    Chunker-->>RAG: Return Chunks of the Docs
+    RAG->>Embed: Send Chunks to Embedding Function
+    Embed-->>RAG: Return Embeddings As Vectors (384-d)
+    RAG->>VectorDB: Store Vectors in DB with Metadata (JSONB)
+```
+
+### Cấu hình & Sử dụng
+
+1. **Cấu hình môi trường (`.env`)**:
+   Sao chép `.env.example` thành `.env` và điền chuỗi kết nối:
+   ```env
+   PGVECTOR_URL=postgresql://postgres:postgres@localhost:5432/plant_doctor
+   ```
+
+2. **Chạy Build Index**:
+   - Sử dụng Semantic Chunking + lưu vào FAISS cục bộ (mặc định offline):
+     ```bash
+     python -m plant_doctor.rag.build_index --chunker-type semantic
+     ```
+   - Sử dụng Semantic Chunking + lưu trực tiếp vào PostgreSQL `pgvector`:
+     ```bash
+     python -m plant_doctor.rag.build_index --chunker-type semantic --pgvector-url postgresql://postgres:postgres@localhost:5432/plant_doctor
+     ```
+   *(Bảng `plant_doctor_embeddings` và extension `vector` sẽ được tự động khởi tạo nếu chưa có).*
+
+3. **Cơ chế Dual Vector Store**:
+   `PlantDoctorPipeline` ưu tiên truy vấn tương đồng từ `PGVectorStore` (toán tử Cosine `<=>` kết hợp lọc `metadata->>'key' = ...`) nếu có `PGVECTOR_URL`. Nếu không có kết nối cơ sở dữ liệu, hệ thống tự động fallback về FAISS cục bộ để đảm bảo 100% tính độc lập và offline.
