@@ -89,8 +89,9 @@ with st.sidebar:
         if st.button("📥 Nạp vào Vector DB", width="stretch"):
             with st.spinner("Đang xử lý và phân đoạn tri thức..."):
                 doc_mgr.save_uploaded_file(uploaded_kb.name, uploaded_kb.getvalue())
-                if pipeline.vector_store and pipeline.embeddings:
-                    n_chunks = doc_mgr.ingest_file(uploaded_kb.name, pipeline.vector_store, pipeline.embeddings)
+                active_store = pipeline.index_manager or pipeline.pg_store or pipeline.vector_store
+                if active_store:
+                    n_chunks = doc_mgr.ingest_file(uploaded_kb.name, active_store, pipeline.embeddings)
                     st.success(f"Đã nạp {n_chunks} đoạn tri thức từ '{uploaded_kb.name}' vào Vector DB!")
                 else:
                     st.success(f"Đã lưu '{uploaded_kb.name}'.")
@@ -103,7 +104,8 @@ with st.sidebar:
                 col_name, col_del = st.columns([4, 1])
                 col_name.caption(f"📄 {d['name']} ({d['size_kb']} KB)")
                 if col_del.button("❌", key=f"del_{d['name']}", help="Xóa tài liệu này"):
-                    doc_mgr.delete_document(d["name"])
+                    active_store = pipeline.index_manager or pipeline.pg_store or pipeline.vector_store
+                    doc_mgr.delete_document(d["name"], index=active_store)
                     st.rerun()
     else:
         st.caption("Chưa có tài liệu nào. Hãy tải lên tài liệu PDF/MD thực tế của bạn!")

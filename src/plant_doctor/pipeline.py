@@ -7,19 +7,22 @@ Gom toàn bộ logic AI:
 - Sinh stream câu trả lời qua mô hình ngôn ngữ Qwen2.5 LoRA
 - Cơ chế dự phòng an toàn (Graceful Fallback) khi thiếu model
 """
+import logging
 import os
 from threading import Thread
 from typing import Any, Iterator
 
 import numpy as np
-import torch
 from PIL import Image
+import torch
 
 from plant_doctor.config import (DEFAULT_MAX_CONTEXT_DOCS, DEFAULT_MAX_NEW_TOKENS,
                                  EMBED_DIR, FAISS_DIR, LLM_MERGED_DIR, PGVECTOR_TABLE,
                                  PGVECTOR_URL, YOLO_WEIGHTS)
 from plant_doctor.knowledge import entry_to_answer, entry_to_text, lookup
 from plant_doctor.prompts import format_context
+
+logger = logging.getLogger(__name__)
 
 # Đảm bảo môi trường chạy offline
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -30,8 +33,11 @@ class PlantDoctorPipeline:
     def __init__(self, load_models: bool = True):
         self.yolo = None
         self.vector_store = None
+        self.index_manager = None
+        self.pg_store = None
         self.tokenizer = None
         self.llm = None
+        self.embeddings = None
 
         if load_models:
             self.load_all_models()
@@ -49,35 +55,34 @@ class PlantDoctorPipeline:
             try:
                 from plant_doctor.rag.pgvector_store import PGVectorStore
                 from langchain_huggingface import HuggingFaceEmbeddings
-                self.pg_store = PGVectorStore(connection_url=PGVECTOR_URL, table_name=PGVECTOR_TABLE)
                 self.embeddings = HuggingFaceEmbeddings(
                     model_name=str(EMBED_DIR),
                     model_kwargs={"device": "cuda" if torch.cuda.is_available() else "cpu"},
                     encode_kwargs={"normalize_embeddings": True},
                 )
+                self.pg_store = PGVectorStore(
+                    connection_url=PGVECTOR_URL,
+                    table_name=PGVECTOR_TABLE,
+                    embeddings=self.embeddings,
+                )
                 self.vector_store = self.pg_store
                 return self.vector_store
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("pgvector unavailable, falling back to FAISS: %s", e)
 
         # 2. Fallback sang FAISS cục bộ
-        if not FAISS_DIR.exists() or not EMBED_DIR.exists():
+        if not EMBED_DIR.exists():
             return None
-        from langchain_community.vectorstores import FAISS
-        from langchain_community.vectorstores.utils import DistanceStrategy
         from langchain_huggingface import HuggingFaceEmbeddings
+        from plant_doctor.rag.index_store import FaissIndexManager
 
         self.embeddings = HuggingFaceEmbeddings(
             model_name=str(EMBED_DIR),
             model_kwargs={"device": "cuda" if torch.cuda.is_available() else "cpu"},
             encode_kwargs={"normalize_embeddings": True},
         )
-        self.vector_store = FAISS.load_local(
-            str(FAISS_DIR),
-            self.embeddings,
-            allow_dangerous_deserialization=True,
-            distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
-        )
+        self.index_manager = FaissIndexManager(FAISS_DIR, self.embeddings)
+        self.vector_store = self.index_manager.store
         return self.vector_store
 
     def load_llm(self) -> tuple[Any, Any]:
