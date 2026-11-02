@@ -65,7 +65,7 @@ pip install -e .[pg]           # hỗ trợ cơ sở dữ liệu PostgreSQL + pg
 | 4 | `python -m plant_doctor.rag.build_index` | `pd-build-index` |
 | 4b| `python -m plant_doctor.rag.download_models` | `pd-download-reranker` (tuỳ chọn) |
 | 4c| `python -m plant_doctor.rag.evaluate --golden data/eval/golden.jsonl` | `pd-eval-rag` (đánh giá) |
-| 5 | `streamlit run app/streamlit_app.py` | |
+| 5 | `python -m streamlit run app/streamlit_app.py` | |
 
 Kiểm thử: `pip install -e .[dev] && pytest`
 
@@ -82,7 +82,7 @@ Kiểm thử: `pip install -e .[dev] && pytest`
 
 ```bash
 # chép models/ và vector_store/ từ Drive về thư mục dự án
-streamlit run app/streamlit_app.py
+python -m streamlit run app/streamlit_app.py
 ```
 
 App tự đặt `HF_HUB_OFFLINE=1`, không kết nối mạng. Nếu thiếu LLM, app vẫn trả lời bằng tri thức
