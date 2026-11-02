@@ -37,14 +37,12 @@ RUN apt-get update \
 WORKDIR /app
 
 # 1) PyTorch theo biến thể CPU/GPU (cài trước để pip không kéo bản CUDA mặc định từ PyPI)
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install torch torchvision --index-url "${TORCH_INDEX_URL}"
+RUN pip install --no-cache-dir torch torchvision --index-url "${TORCH_INDEX_URL}"
 
 # 2) Cài đặt package plant_doctor và các thư viện phụ thuộc
 COPY pyproject.toml README.md ./
 COPY src ./src
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install . && rm -rf src
+RUN pip install --no-cache-dir . && rm -rf src
 
 # 3) App + kho tri thức
 COPY app ./app
