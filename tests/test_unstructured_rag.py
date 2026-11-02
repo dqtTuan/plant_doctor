@@ -1,4 +1,3 @@
-import pytest
 from langchain_core.documents import Document
 from plant_doctor.rag.build_index import load_documents, chunk_documents_by_type
 
@@ -6,7 +5,7 @@ from plant_doctor.rag.build_index import load_documents, chunk_documents_by_type
 def test_load_documents_from_user_directory(tmp_path):
     user_file = tmp_path / "tai_lieu_lua.md"
     user_file.write_text("# Cẩm nang bệnh lúa\n\nBệnh đạo ôn lúa do nấm Pyricularia oryzae gây ra.", encoding="utf-8")
-    
+
     docs = load_documents(tmp_path)
     assert len(docs) >= 1
     assert docs[0].metadata["source"] == "tai_lieu_lua.md"

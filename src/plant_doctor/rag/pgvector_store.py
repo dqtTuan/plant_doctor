@@ -7,7 +7,6 @@ Quản lý:
 """
 import json
 import logging
-from typing import Any
 
 from langchain_core.documents import Document
 
@@ -48,7 +47,7 @@ class PGVectorStore:
                 """)
                 # 3. Tạo index IVFFlat hoặc HNSW nếu chưa có (khi bảng có dữ liệu lớn)
                 cur.execute(f"""
-                    CREATE INDEX IF NOT EXISTS idx_{self.table_name}_key 
+                    CREATE INDEX IF NOT EXISTS idx_{self.table_name}_key
                     ON {self.table_name} (((metadata->>'key')));
                 """)
             conn.commit()

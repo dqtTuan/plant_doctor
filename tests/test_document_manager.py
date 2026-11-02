@@ -1,5 +1,3 @@
-import pytest
-from pathlib import Path
 from plant_doctor.rag.document_manager import DocumentManager
 
 

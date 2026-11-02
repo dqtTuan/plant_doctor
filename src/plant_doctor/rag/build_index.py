@@ -9,7 +9,6 @@ python -m plant_doctor.rag.build_index --chunker-type semantic
 import argparse
 from pathlib import Path
 
-import numpy as np
 from langchain_community.vectorstores import FAISS
 from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_core.documents import Document
@@ -17,7 +16,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from plant_doctor.config import EMBED_DIR, FAISS_DIR, KB_DIR, PGVECTOR_TABLE, PGVECTOR_URL
-from plant_doctor.knowledge import entry_to_text, load_kb, title
+from plant_doctor.knowledge import load_kb
 from plant_doctor.rag.semantic_chunking import split_documents_semantically, tag_disease
 
 
@@ -101,7 +100,7 @@ def build_vector_store(kb_dir: Path | str = KB_DIR,
     print(f"Tổng số tài liệu sẵn sàng index ({chunker_type} chunking): {len(docs)}")
 
     if pgvector_url:
-        print(f"Đang lưu vector vào PostgreSQL (pgvector)...")
+        print("Đang lưu vector vào PostgreSQL (pgvector)...")
         from plant_doctor.rag.pgvector_store import PGVectorStore
         pg_store = PGVectorStore(connection_url=pgvector_url, table_name=PGVECTOR_TABLE)
         doc_texts = [d.page_content for d in docs]

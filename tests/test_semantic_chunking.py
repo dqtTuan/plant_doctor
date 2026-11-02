@@ -34,7 +34,8 @@ def test_split_documents_semantically_with_metadata():
                    metadata={"source": "manual.txt", "page": 1})
     fake_kb = [{"key": "coffee_leaf_rust", "crop_vi": "Cà phê", "crop_en": "Coffee",
                 "name_vi": "Bệnh gỉ sắt", "name_en": "Rust"}]
-    mock_embed = lambda sents: np.ones((len(sents), 4))
+    def mock_embed(sents):
+        return np.ones((len(sents), 4))
     res = split_documents_semantically([doc], embed_fn=mock_embed, kb=fake_kb)
     assert len(res) >= 1
     assert res[0].metadata["source"] == "manual.txt"

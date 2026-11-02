@@ -1,6 +1,5 @@
 """Kiểm thử unit test cho PGVectorStore (với mock connection)."""
 from unittest.mock import MagicMock, patch
-from langchain_core.documents import Document
 from plant_doctor.rag.pgvector_store import PGVectorStore
 
 

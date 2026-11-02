@@ -48,7 +48,7 @@ def extract_pairs_from_markdown():
         content = md_file.read_text(encoding="utf-8")
         blocks = re.split(r"\n##\s+", content)
         for block in blocks[1:]:
-            lines = [l.strip() for l in block.splitlines() if l.strip()]
+            lines = [line.strip() for line in block.splitlines() if line.strip()]
             if not lines:
                 continue
             title_line = lines[0]

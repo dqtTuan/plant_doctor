@@ -1,6 +1,6 @@
 """Kiểm thử kỹ thuật Chunking và nạp tài liệu trong RAG."""
 from langchain_core.documents import Document
-from plant_doctor.rag.build_index import chunk_documents, load_documents
+from plant_doctor.rag.build_index import chunk_documents
 
 
 def test_chunk_documents_overlap_and_tagging():

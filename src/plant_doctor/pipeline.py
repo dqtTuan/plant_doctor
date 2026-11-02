@@ -18,8 +18,8 @@ from PIL import Image
 from plant_doctor.config import (DEFAULT_MAX_CONTEXT_DOCS, DEFAULT_MAX_NEW_TOKENS,
                                  EMBED_DIR, FAISS_DIR, LLM_MERGED_DIR, PGVECTOR_TABLE,
                                  PGVECTOR_URL, YOLO_WEIGHTS)
-from plant_doctor.knowledge import entry_to_answer, entry_to_text, is_healthy, lookup
-from plant_doctor.prompts import build_messages, format_context
+from plant_doctor.knowledge import entry_to_answer, entry_to_text, lookup
+from plant_doctor.prompts import format_context
 
 # Đảm bảo môi trường chạy offline
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -57,7 +57,7 @@ class PlantDoctorPipeline:
                 )
                 self.vector_store = self.pg_store
                 return self.vector_store
-            except Exception as e:
+            except Exception:
                 pass
 
         # 2. Fallback sang FAISS cục bộ

@@ -2,7 +2,6 @@
 
 Tự động phân tích nhãn YOLO và định dạng văn bản phục vụ hiển thị và suy luận.
 """
-import re
 from plant_doctor.rag.query_expansion import parse_label, normalize_label
 
 SECTIONS = [
