@@ -74,6 +74,9 @@ def train_yolo(data_yaml: Path | str = DATASET_DIR / "data.yaml",
     if device is None:
         device = 0 if torch.cuda.is_available() else "cpu"
 
+    device_name = f"CUDA (GPU: {torch.cuda.get_device_name(0)})" if torch.cuda.is_available() else "CPU"
+    print(f"🚀 Thiết bị huấn luyện YOLO: {device_name} | Batch: {batch} | Cache: {cache}")
+
     # Chuẩn hóa giá trị cache (mặc định False: đọc trực tiếp từ Drive/ổ cứng, không tốn RAM)
     if isinstance(cache, str):
         if cache.lower() in {"false", "none", "0"}:
