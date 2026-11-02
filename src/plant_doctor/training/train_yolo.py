@@ -1,8 +1,7 @@
 """Bước 1: Tự huấn luyện YOLOv8n trên dataset bệnh lá cây.
 
-python -m plant_doctor.training.train_yolo                               # 100 epochs, batch 16
-python -m plant_doctor.training.train_yolo --batch 32 --cache ram        # Tối ưu hóa GPU & chống nghẽn I/O Google Drive
-python -m plant_doctor.training.train_yolo --batch -1 --cache ram        # AutoBatch: tự động chiếm tối đa VRAM GPU
+python -m plant_doctor.training.train_yolo                # Đọc trực tiếp từ Drive/ổ cứng (cache=False)
+python -m plant_doctor.training.train_yolo --batch 16    # 100 epochs, batch 16
 """
 import argparse
 from pathlib import Path
@@ -66,8 +65,8 @@ def train_yolo(data_yaml: Path | str = DATASET_DIR / "data.yaml",
                project: Path | str = YOLO_PROJECT,
                name: str = YOLO_NAME,
                device: str | int | None = None,
-               cache: bool | str = True,
-               workers: int = 4,
+               cache: bool | str = False,
+               workers: int = 2,
                amp: bool = True) -> dict:
     """Huấn luyện mô hình YOLOv8 trên tập dữ liệu và đánh giá trên tập test."""
     data_yaml = normalize_data_yaml(data_yaml)
@@ -75,9 +74,12 @@ def train_yolo(data_yaml: Path | str = DATASET_DIR / "data.yaml",
     if device is None:
         device = 0 if torch.cuda.is_available() else "cpu"
 
-    # Chuẩn hóa giá trị cache
-    if isinstance(cache, str) and cache.lower() in {"false", "none", "0"}:
-        cache = False
+    # Chuẩn hóa giá trị cache (mặc định False: đọc trực tiếp từ Drive/ổ cứng, không tốn RAM)
+    if isinstance(cache, str):
+        if cache.lower() in {"false", "none", "0"}:
+            cache = False
+        elif cache.lower() == "true":
+            cache = True
 
     model = YOLO(str(model_weights))
     model.train(
@@ -115,16 +117,16 @@ def main():
     ap.add_argument("--model", default=str(YOLO_BASE))
     ap.add_argument("--epochs", type=int, default=100)
     ap.add_argument("--batch", type=int, default=16,
-                    help="Kích thước batch (16, 32, 64 hoặc -1 để AutoBatch tối đa VRAM GPU)")
+                    help="Kích thước batch (16 hoặc 32)")
     ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--freeze", type=int, default=0,
-                    help="Số layer đầu bị đóng băng (10 = backbone YOLOv8, 0 = không đóng băng)")
+                    help="Số layer đầu bị đóng băng (0 = train toàn bộ mạng)")
     ap.add_argument("--device", default=None,
                     help="Thiết bị tính toán (0, 1, 'cpu' hoặc None để tự động chọn GPU)")
-    ap.add_argument("--cache", default="ram",
-                    help="Bộ đệm dữ liệu (ram, disk, false). Cực kỳ quan trọng trên Colab để tránh nghẽn I/O Drive")
-    ap.add_argument("--workers", type=int, default=4,
-                    help="Số tiến trình nạp dữ liệu song song (DataLoader workers)")
+    ap.add_argument("--cache", default="false",
+                    help="Bộ đệm dữ liệu ('false' để đọc trực tiếp từ Drive/ổ cứng, không tốn RAM)")
+    ap.add_argument("--workers", type=int, default=2,
+                    help="Số luồng đọc dữ liệu song song (mặc định 2 phù hợp trực tiếp với Drive)")
     args = ap.parse_args()
 
     train_yolo(
