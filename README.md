@@ -63,6 +63,8 @@ pip install -e .[pg]           # hỗ trợ cơ sở dữ liệu PostgreSQL + pg
 | 2 | `python -m plant_doctor.training.train_embedding` | `pd-train-embedding` |
 | 3 | `python -m plant_doctor.training.train_llm` | `pd-train-llm` |
 | 4 | `python -m plant_doctor.rag.build_index` | `pd-build-index` |
+| 4b| `python -m plant_doctor.rag.download_models` | `pd-download-reranker` (tuỳ chọn) |
+| 4c| `python -m plant_doctor.rag.evaluate --golden data/eval/golden.jsonl` | `pd-eval-rag` (đánh giá) |
 | 5 | `streamlit run app/streamlit_app.py` | |
 
 Kiểm thử: `pip install -e .[dev] && pytest`
@@ -197,3 +199,41 @@ Hệ thống hoạt động theo nguyên tắc **Zero Mock Data** và **Strict G
 - **Nạp tài liệu trực tiếp trên Web UI**: Người dùng có thể kéo thả tài liệu và bấm *"📥 Nạp vào Vector DB"* ngay trên Sidebar của giao diện Streamlit, hệ thống sẽ tự động phân đoạn theo ngữ nghĩa (Semantic Chunking) và cập nhật tức thì.
 - **Strict Grounding**: LLM chỉ được phép trả lời dựa trên những gì có trong tài liệu người dùng đã nạp. Nếu trong tài liệu không có thông tin về bệnh được hỏi, mô hình sẽ dứt khoát từ chối và hướng dẫn nạp thêm tài liệu, tuyệt đối không bịa đặt.
 - **Query Expansion**: Tự động chuyển đổi nhãn phát hiện từ YOLO (`Crop___Disease`) thành câu hỏi ngữ nghĩa nông nghiệp tự nhiên để truy xuất chính xác các đoạn văn liên quan trong Vector DB (FAISS / PostgreSQL `pgvector`).
+
+
+## 🎯 Nâng Cấp Chất Lượng RAG (Hybrid Search, Reranking & Citations)
+
+Hệ thống RAG nâng cao tích hợp 5 cơ chế cốt lõi để đạt độ chính xác tối ưu khi truy xuất tài liệu chuyên ngành bảo vệ thực vật:
+
+### 1. Hybrid Search (Dense + Lexical BM25) & Reciprocal Rank Fusion (RRF)
+- **Dense Vector Search**: Sử dụng FAISS (hoặc pgvector) với mô hình đa ngôn ngữ `paraphrase-multilingual-MiniLM-L12-v2`. Lọc ngưỡng tương đồng tối thiểu `DENSE_MIN_SCORE = 0.35` để loại bỏ các đoạn tài liệu lạc đề trước khi sinh phản hồi.
+- **Lexical Search (BM25Okapi)**: Tách từ tiếng Việt (`tokenize_vi`) kết hợp unigram và bigram âm tiết, áp dụng sàn positive IDF (`floor = 0.25`) tránh điểm âm trên tập tài liệu nhỏ.
+- **RRF Fusion**: Kết hợp kết quả từ hai kênh với hệ số chuẩn k = 60:
+  `RRF(d) = 1 / (60 + rank_dense(d)) + 1 / (60 + rank_bm25(d))`
+
+### 2. Header-Aware Chunking & Token Capping
+- **Header-Aware Markdown Splitting**: Phân tích cấu trúc tiêu đề (`#`, `##`, `###`) của tài liệu và truyền breadcrumb tiêu đề vào từng chunk (ví dụ `[Cà chua > Đốm lá vi khuẩn] ...`), giúp bộ tìm kiếm hiểu trọn vẹn ngữ cảnh phân mục.
+- **Token Capping**: Giới hạn kích thước chunk tối đa 126 tokens (giới hạn cứng của embedding model là 128 tokens trừ 2 special tokens), ngắt an toàn tại ranh giới câu hoặc từ ngữ tiếng Việt, loại bỏ hoàn toàn hiện tượng mất đuôi nội dung khi tạo vector.
+
+### 3. Cross-Encoder Reranker (Offline)
+- Mô hình reranker `BAAI/bge-reranker-base` tinh chỉnh lại thứ tự của top-k đoạn văn bản sau khi hợp nhất.
+- Tải mô hình về chạy offline 100%:
+  ```bash
+  pd-download-reranker
+  ```
+  *(Nếu chưa tải reranker, hệ thống tự động fallback mượt mà về bảng xếp hạng RRF).*
+
+### 4. Đánh Giá Chất Lượng Truy Xuất (`pd-eval-rag`)
+- Harness đánh giá độc lập đo lường 3 chỉ số then chốt trên tập dữ liệu golden: **Hit@K**, **MRR** (Mean Reciprocal Rank), và **No-Answer Accuracy** (khả năng từ chối đúng khi tài liệu không chứa câu trả lời).
+- Chạy đánh giá:
+  ```bash
+  pd-eval-rag --golden data/eval/golden.jsonl --k 4
+  ```
+  *(Xem hướng dẫn biên soạn tập đánh giá tại `data/eval/README.md`).*
+
+### 5. Numbered Citations (Trích Dẫn Nguồn & Số Trang)
+- Ngữ cảnh đưa vào LLM được đánh số tường minh: `[1] (file.pdf, trang 3) <nội dung>`, `[2] (cam_nang.md) <nội dung>`.
+- System prompt yêu cầu LLM trích dẫn số thứ tự tài liệu trong ngoặc vuông (`[1]`, `[1][2]`) ngay sau từng khuyến cáo hoặc phác đồ điều trị.
+- Giao diện Streamlit tự động phân loại và làm nổi bật:
+  - `✅ được trích dẫn`: các tài liệu thực sự được mô hình tham chiếu trong câu trả lời.
+  - `· không trích dẫn`: các tài liệu được truy xuất nhưng không cần dùng đến.
