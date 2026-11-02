@@ -47,7 +47,11 @@ plant_doctor/
 
 ```bash
 pip install torch  # theo hướng dẫn pytorch.org (bản CUDA nếu có GPU)
-pip install -r requirements.txt   # cài thư viện + package plant_doctor (editable)
+pip install -r requirements.txt   # cài package plant_doctor ở chế độ editable
+
+# Tuỳ chọn:
+pip install -e .[dev]          # công cụ phát triển: pytest, pytest-cov, ruff
+pip install -e .[pg]           # hỗ trợ cơ sở dữ liệu PostgreSQL + pgvector
 ```
 
 ## Pipeline
