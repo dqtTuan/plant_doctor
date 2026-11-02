@@ -199,10 +199,16 @@ class PlantDoctorPipeline:
         Thread(target=self.llm.generate, kwargs=kwargs, daemon=True).start()
         yield from streamer
 
-    def fallback_answer(self, diagnosis: list[tuple[str, float, dict | None]], texts: list[str]) -> str:
+    def fallback_answer(
+        self,
+        diagnosis: list[tuple[str, float, dict | None]],
+        docs: list | None = None,
+        texts: list | None = None,
+    ) -> str:
         """Chế độ dự phòng khi không có LLM: ưu tiên tài liệu thực tế của người dùng."""
-        if texts:
-            return "Chưa có mô hình ngôn ngữ cục bộ. Trích đoạn tài liệu từ kho tri thức của bạn:\n\n" + format_context(texts)
+        target_docs = docs if docs is not None else (texts or [])
+        if target_docs:
+            return "Chưa có mô hình ngôn ngữ cục bộ. Trích đoạn tài liệu từ kho tri thức của bạn:\n\n" + format_context(target_docs)
         entries = [e for _, _, e in diagnosis if e and ("symptoms" in e or "bio_treatment" in e)]
         if entries:
             return "\n\n---\n\n".join(entry_to_answer(e) for e in entries)

@@ -145,21 +145,29 @@ def answer(question: str) -> str:
     query = question.strip()
 
     docs = pipeline.retrieve_context(query, keys, max_docs=MAX_CONTEXT_DOCS)
-    texts = [d if isinstance(d, str) else d.page_content for d in docs]
 
     if pipeline.llm is None:
-        text = pipeline.fallback_answer(diag, texts)
+        text = pipeline.fallback_answer(diag, docs)
         st.markdown(text)
     else:
-        messages = build_messages(format_context(texts), question, history_pairs())
+        messages = build_messages(format_context(docs), question, history_pairs())
         text = st.write_stream(pipeline.stream_answer(messages, max_new_tokens=max_new_tokens))
 
-    with st.expander(f"📚 Nguồn tri thức đã truy xuất ({len(texts)})"):
+    from plant_doctor.prompts import extract_citations
+    cited_indices = set(extract_citations(text, len(docs)))
+
+    with st.expander(f"📚 Nguồn tri thức ({len(docs)})"):
         for i, d in enumerate(docs, 1):
             src = d.metadata.get("source", "Tài liệu chuyên môn") if hasattr(d, "metadata") else "Tài liệu tham khảo"
-            page = "" if isinstance(d, str) else d.metadata.get("page", "")
-            st.markdown(f"**[{i}] {src}** {f'– trang {page}' if page else ''}")
-            st.caption((d if isinstance(d, str) else d.page_content)[:600])
+            page = d.metadata.get("page") if hasattr(d, "metadata") else None
+            score = d.metadata.get("score") if hasattr(d, "metadata") else None
+            is_cited = i in cited_indices
+            status_tag = "✅ được trích dẫn" if is_cited else "· không trích dẫn"
+            score_tag = f" (độ khớp: {score:.2f})" if score is not None else ""
+            page_tag = f" – trang {page}" if page else ""
+            st.markdown(f"**[{i}] {status_tag}** | `{src}`{page_tag}{score_tag}")
+            content_str = d.page_content if hasattr(d, "page_content") else str(d)
+            st.caption(content_str[:600])
     return text
 
 
