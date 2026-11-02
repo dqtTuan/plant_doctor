@@ -40,16 +40,13 @@ WORKDIR /app
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install torch torchvision --index-url "${TORCH_INDEX_URL}"
 
-# 2) Thư viện phụ thuộc (layer được cache khi chỉ đổi code)
-COPY requirements.txt .
-RUN --mount=type=cache,target=/root/.cache/pip \
-    grep -v '^-e' requirements.txt > /tmp/requirements.txt \
-    && pip install -r /tmp/requirements.txt
-
-# 3) Package plant_doctor + app + kho tri thức
+# 2) Cài đặt package plant_doctor và các thư viện phụ thuộc
 COPY pyproject.toml README.md ./
 COPY src ./src
-RUN pip install --no-deps --no-cache-dir . && rm -rf src
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install . && rm -rf src
+
+# 3) App + kho tri thức
 COPY app ./app
 COPY data/knowledge_base ./data/knowledge_base
 
@@ -65,4 +62,3 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
 
 CMD ["streamlit", "run", "app/streamlit_app.py", \
      "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true"]
-
