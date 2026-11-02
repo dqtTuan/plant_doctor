@@ -26,7 +26,7 @@ def test_pipeline_retrieve_without_store():
 
 def test_pipeline_default_optimization_constants():
     from plant_doctor.config import DEFAULT_MAX_CONTEXT_DOCS, DEFAULT_MAX_NEW_TOKENS
-    assert DEFAULT_MAX_CONTEXT_DOCS == 2
+    assert DEFAULT_MAX_CONTEXT_DOCS == 4
     assert DEFAULT_MAX_NEW_TOKENS == 256
 
 
@@ -57,8 +57,9 @@ def test_retrieve_context_open_semantic_search():
     pipeline = PlantDoctorPipeline(load_models=False)
     mock_store = MagicMock()
     mock_doc = MagicMock()
+    mock_doc.metadata = {}
     mock_doc.page_content = "Tài liệu chuyên sâu về nấm bệnh từ file cẩm nang Markdown."
-    mock_store.similarity_search.return_value = [mock_doc]
+    mock_store.similarity_search_with_score.return_value = [(mock_doc, 0.9)]
     pipeline.vector_store = mock_store
 
     docs = pipeline.retrieve_context("Cách phòng trừ bệnh", keys=[])

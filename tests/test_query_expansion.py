@@ -1,4 +1,3 @@
-import pytest
 from plant_doctor.rag.query_expansion import parse_label, label_to_query, yolo_detections_to_queries
 
 

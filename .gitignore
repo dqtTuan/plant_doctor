@@ -7,9 +7,10 @@ __pycache__/
 venv/
 .ipynb_checkpoints/
 
-# Dữ liệu (chỉ theo dõi kho tri thức)
+# Dữ liệu (chỉ theo dõi kho tri thức & eval)
 data/*
 !data/knowledge_base/
+!data/eval/
 !data/README.md
 
 # Mô hình & chỉ mục sinh ra khi train

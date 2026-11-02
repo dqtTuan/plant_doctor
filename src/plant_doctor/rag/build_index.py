@@ -8,73 +8,105 @@ python -m plant_doctor.rag.build_index --chunker-type semantic
 """
 import argparse
 from pathlib import Path
+from typing import Callable
 
-import numpy as np
 from langchain_community.vectorstores import FAISS
 from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from plant_doctor.config import EMBED_DIR, FAISS_DIR, KB_DIR, PGVECTOR_TABLE, PGVECTOR_URL
-from plant_doctor.knowledge import entry_to_text, load_kb, title
-from plant_doctor.rag.semantic_chunking import split_documents_semantically, tag_disease
+from plant_doctor.config import (
+    EMBED_DIR,
+    FAISS_DIR,
+    KB_DIR,
+    PGVECTOR_TABLE,
+    PGVECTOR_URL,
+    embed_max_tokens,
+)
+from plant_doctor.knowledge import load_kb
+from plant_doctor.rag.loaders import assign_chunk_uids, load_directory
+from plant_doctor.rag.semantic_chunking import (
+    cap_chunks,
+    embedded_text,
+    split_documents_semantically,
+    split_markdown_sections,
+    tag_disease,
+)
 
 
 def load_documents(kb_dir: Path | str = KB_DIR) -> list[Document]:
     """Nạp tất cả các tài liệu file rời (.pdf, .md, .txt) từ thư mục tri thức."""
-    kb_path = Path(kb_dir)
-    docs = []
-    for path in sorted(kb_path.rglob("*")):
-        if path.name.lower().startswith("readme"):
-            continue
-        suffix = path.suffix.lower()
-        if suffix == ".pdf":
-            from pypdf import PdfReader
-            for i, page in enumerate(PdfReader(str(path)).pages):
-                text = page.extract_text() or ""
-                if text.strip():
-                    docs.append(Document(page_content=text, metadata={"source": path.name, "page": i + 1}))
-        elif suffix in (".md", ".txt"):
-            docs.append(Document(page_content=path.read_text(encoding="utf-8"),
-                                 metadata={"source": path.name}))
-    return docs
+    return load_directory(kb_dir)
 
 
-def chunk_documents(docs: list[Document], chunk_size: int = 1000, chunk_overlap: int = 200,
-                    kb: list | None = None) -> list[Document]:
+def chunk_documents(
+    docs: list[Document],
+    chunk_size: int = 1000,
+    chunk_overlap: int = 200,
+    kb: list | None = None,
+) -> list[Document]:
     """Cắt nhỏ tài liệu bằng RecursiveCharacterTextSplitter và tự động gắn thẻ metadata key."""
-    return chunk_documents_by_type(docs, chunker_type="recursive", chunk_size=chunk_size, chunk_overlap=chunk_overlap, kb=kb)
+    return chunk_documents_by_type(
+        docs,
+        chunker_type="recursive",
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        kb=kb,
+    )
 
 
-def chunk_documents_by_type(docs: list[Document],
-                           chunker_type: str = "semantic",
-                           chunk_size: int = 1000,
-                           chunk_overlap: int = 200,
-                           embed_fn = None,
-                           kb: list | None = None) -> list[Document]:
+def chunk_documents_by_type(
+    docs: list[Document],
+    chunker_type: str = "semantic",
+    chunk_size: int = 1000,
+    chunk_overlap: int = 200,
+    embed_fn=None,
+    kb: list | None = None,
+    max_tokens: int | None = None,
+    count_tokens: Callable[[str], int] | None = None,
+) -> list[Document]:
     """Hỗ trợ phân đoạn tài liệu theo Semantic Chunking hoặc Recursive Splitting."""
     if not docs:
         return []
 
-    if chunker_type == "semantic" and embed_fn is not None:
-        return split_documents_semantically(docs, embed_fn=embed_fn, kb=kb)
+    # 1. Tách cấu trúc Markdown (H1, H2, H3 breadcrumbs)
+    md_split_docs = []
+    for d in docs:
+        md_split_docs.extend(split_markdown_sections(d))
 
-    splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-    chunks = splitter.split_documents(docs)
-    if kb:
-        for c in chunks:
-            tag_disease(c, kb)
+    # 2. Phân đoạn ngữ nghĩa hoặc cố định
+    if chunker_type == "semantic" and embed_fn is not None:
+        chunks = split_documents_semantically(md_split_docs, embed_fn=embed_fn, kb=kb)
+    else:
+        splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        chunks = splitter.split_documents(md_split_docs)
+        if kb:
+            for c in chunks:
+                tag_disease(c, kb)
+
+    # 3. Giới hạn độ dài token nếu có hàm đếm
+    if max_tokens is not None and count_tokens is not None:
+        chunks = cap_chunks(chunks, max_tokens=max_tokens, count_tokens=count_tokens)
+
+    # 4. Gắn breadcrumb vào nội dung chính thức
+    for c in chunks:
+        c.page_content = embedded_text(c)
+
+    # 5. Gán mã định danh duy nhất ổn định chunk_uid
+    assign_chunk_uids(chunks)
     return chunks
 
 
-def build_vector_store(kb_dir: Path | str = KB_DIR,
-                       embed_dir: Path | str = EMBED_DIR,
-                       output_dir: Path | str = FAISS_DIR,
-                       chunker_type: str = "semantic",
-                       chunk_size: int = 1000,
-                       chunk_overlap: int = 200,
-                       pgvector_url: str = PGVECTOR_URL) -> int:
+def build_vector_store(
+    kb_dir: Path | str = KB_DIR,
+    embed_dir: Path | str = EMBED_DIR,
+    output_dir: Path | str = FAISS_DIR,
+    chunker_type: str = "semantic",
+    chunk_size: int = 1000,
+    chunk_overlap: int = 200,
+    pgvector_url: str = PGVECTOR_URL,
+) -> int:
     """Đóng gói toàn bộ tri thức thành FAISS index cục bộ hoặc PostgreSQL (pgvector)."""
     file_docs = load_documents(kb_dir)
     if not file_docs:
@@ -82,11 +114,26 @@ def build_vector_store(kb_dir: Path | str = KB_DIR,
 
     embed_path = Path(embed_dir)
     if not (embed_path / "config.json").exists() and not (embed_path / "modules.json").exists():
-        raise SystemExit(f"Chưa có mô hình embedding tại {embed_path}. "
-                         "Hãy chạy `python -m plant_doctor.training.train_embedding`")
+        raise SystemExit(
+            f"Chưa có mô hình embedding tại {embed_path}. "
+            "Hãy chạy `python -m plant_doctor.training.train_embedding`"
+        )
 
-    embeddings = HuggingFaceEmbeddings(model_name=str(embed_path),
-                                       encode_kwargs={"normalize_embeddings": True})
+    embeddings = HuggingFaceEmbeddings(
+        model_name=str(embed_path),
+        encode_kwargs={"normalize_embeddings": True},
+    )
+
+    count_fn = None
+    try:
+        from transformers import AutoTokenizer
+
+        tok = AutoTokenizer.from_pretrained(str(embed_path))
+
+        def count_fn(s):
+            return len(tok.encode(s, add_special_tokens=False))
+    except Exception:
+        pass
 
     kb = load_kb()
     chunks = chunk_documents_by_type(
@@ -96,13 +143,16 @@ def build_vector_store(kb_dir: Path | str = KB_DIR,
         chunk_overlap=chunk_overlap,
         embed_fn=embeddings.embed_documents,
         kb=kb if kb else None,
+        max_tokens=embed_max_tokens(embed_path),
+        count_tokens=count_fn,
     )
     docs = chunks
     print(f"Tổng số tài liệu sẵn sàng index ({chunker_type} chunking): {len(docs)}")
 
     if pgvector_url:
-        print(f"Đang lưu vector vào PostgreSQL (pgvector)...")
+        print("Đang lưu vector vào PostgreSQL (pgvector)...")
         from plant_doctor.rag.pgvector_store import PGVectorStore
+
         pg_store = PGVectorStore(connection_url=pgvector_url, table_name=PGVECTOR_TABLE)
         doc_texts = [d.page_content for d in docs]
         vecs = embeddings.embed_documents(doc_texts)
@@ -124,8 +174,12 @@ def main():
     ap.add_argument("--kb-dir", default=str(KB_DIR), help="Thư mục chứa tài liệu tri thức")
     ap.add_argument("--embed-dir", default=str(EMBED_DIR), help="Thư mục mô hình embedding")
     ap.add_argument("--out-dir", default=str(FAISS_DIR), help="Thư mục lưu faiss index")
-    ap.add_argument("--chunker-type", choices=["semantic", "recursive"], default="semantic",
-                    help="Phương pháp chia đoạn: semantic (ngữ nghĩa) hoặc recursive (cố định)")
+    ap.add_argument(
+        "--chunker-type",
+        choices=["semantic", "recursive"],
+        default="semantic",
+        help="Phương pháp chia đoạn: semantic (ngữ nghĩa) hoặc recursive (cố định)",
+    )
     ap.add_argument("--chunk-size", type=int, default=1000, help="Kích thước chunk (nếu dùng recursive)")
     ap.add_argument("--chunk-overlap", type=int, default=200, help="Độ gối đầu giữa các chunk")
     ap.add_argument("--pgvector-url", default=PGVECTOR_URL, help="URL kết nối PostgreSQL pgvector (nếu có)")

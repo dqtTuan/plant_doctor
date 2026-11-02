@@ -66,13 +66,14 @@ with st.sidebar:
     st.subheader("Trạng thái mô hình")
     st.write(("✅" if pipeline.yolo else "❌") + " YOLOv8 (`best.pt`)")
     st.write(("✅" if pipeline.vector_store else "⚠️") + " Embedding + FAISS")
+    st.write(("✅" if pipeline.reranker else "⚪") + " Cross-Encoder Reranker")
     st.write(("✅" if pipeline.llm else "⚠️") + " LLM LoRA cục bộ")
     if not pipeline.vector_store:
         st.caption("Thiếu Vector DB → dùng thông tin phân tích nhãn.")
     if not pipeline.llm:
         st.caption("Thiếu LLM → trả lời bằng tri thức có cấu trúc (không sinh văn bản).")
     st.caption(f"Thiết bị: {'GPU ' + torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
-    if st.button("🗑️ Xóa hội thoại", use_container_width=True):
+    if st.button("🗑️ Xóa hội thoại", width="stretch"):
         st.session_state.messages = []
         st.rerun()
 
@@ -86,11 +87,12 @@ with st.sidebar:
         key="kb_uploader",
     )
     if uploaded_kb is not None:
-        if st.button("📥 Nạp vào Vector DB", use_container_width=True):
+        if st.button("📥 Nạp vào Vector DB", width="stretch"):
             with st.spinner("Đang xử lý và phân đoạn tri thức..."):
                 doc_mgr.save_uploaded_file(uploaded_kb.name, uploaded_kb.getvalue())
-                if pipeline.vector_store and pipeline.embeddings:
-                    n_chunks = doc_mgr.ingest_file(uploaded_kb.name, pipeline.vector_store, pipeline.embeddings)
+                active_store = pipeline.index_manager or pipeline.pg_store or pipeline.vector_store
+                if active_store:
+                    n_chunks = doc_mgr.ingest_file(uploaded_kb.name, active_store, pipeline.embeddings)
                     st.success(f"Đã nạp {n_chunks} đoạn tri thức từ '{uploaded_kb.name}' vào Vector DB!")
                 else:
                     st.success(f"Đã lưu '{uploaded_kb.name}'.")
@@ -103,7 +105,8 @@ with st.sidebar:
                 col_name, col_del = st.columns([4, 1])
                 col_name.caption(f"📄 {d['name']} ({d['size_kb']} KB)")
                 if col_del.button("❌", key=f"del_{d['name']}", help="Xóa tài liệu này"):
-                    doc_mgr.delete_document(d["name"])
+                    active_store = pipeline.index_manager or pipeline.pg_store or pipeline.vector_store
+                    doc_mgr.delete_document(d["name"], index=active_store)
                     st.rerun()
     else:
         st.caption("Chưa có tài liệu nào. Hãy tải lên tài liệu PDF/MD thực tế của bạn!")
@@ -139,25 +142,32 @@ def answer(question: str) -> str:
 
     # 2. Truy xuất RAG và suy luận LLM cho câu hỏi tự do
     keys = [e["key"] for _, _, e in diag if e]
-    names = ", ".join(c for c, _, _ in diag)
-    query = f"{question} {names}".strip()
+    query = question.strip()
 
     docs = pipeline.retrieve_context(query, keys, max_docs=MAX_CONTEXT_DOCS)
-    texts = [d if isinstance(d, str) else d.page_content for d in docs]
 
     if pipeline.llm is None:
-        text = pipeline.fallback_answer(diag, texts)
+        text = pipeline.fallback_answer(diag, docs)
         st.markdown(text)
     else:
-        messages = build_messages(format_context(texts), question, history_pairs())
+        messages = build_messages(format_context(docs), question, history_pairs())
         text = st.write_stream(pipeline.stream_answer(messages, max_new_tokens=max_new_tokens))
 
-    with st.expander(f"📚 Nguồn tri thức đã truy xuất ({len(texts)})"):
+    from plant_doctor.prompts import extract_citations
+    cited_indices = set(extract_citations(text, len(docs)))
+
+    with st.expander(f"📚 Nguồn tri thức ({len(docs)})"):
         for i, d in enumerate(docs, 1):
             src = d.metadata.get("source", "Tài liệu chuyên môn") if hasattr(d, "metadata") else "Tài liệu tham khảo"
-            page = "" if isinstance(d, str) else d.metadata.get("page", "")
-            st.markdown(f"**[{i}] {src}** {f'– trang {page}' if page else ''}")
-            st.caption((d if isinstance(d, str) else d.page_content)[:600])
+            page = d.metadata.get("page") if hasattr(d, "metadata") else None
+            score = d.metadata.get("score") if hasattr(d, "metadata") else None
+            is_cited = i in cited_indices
+            status_tag = "✅ được trích dẫn" if is_cited else "· không trích dẫn"
+            score_tag = f" (độ khớp: {score:.2f})" if score is not None else ""
+            page_tag = f" – trang {page}" if page else ""
+            st.markdown(f"**[{i}] {status_tag}** | `{src}`{page_tag}{score_tag}")
+            content_str = d.page_content if hasattr(d, "page_content") else str(d)
+            st.caption(content_str[:600])
     return text
 
 
@@ -180,11 +190,11 @@ if uploaded is not None:
     col1, col2, col3 = st.columns([1, 1, 0.8])
     with col1:
         st.markdown("##### Ảnh gốc")
-        st.image(image, use_container_width=True)
+        st.image(image, width="stretch")
     with col2:
         st.markdown("##### Khoanh vùng bệnh (YOLOv8)")
         if st.session_state.get("annotated") is not None:
-            st.image(st.session_state.annotated, use_container_width=True)
+            st.image(st.session_state.annotated, width="stretch")
     with col3:
         st.markdown("##### Kết quả chẩn đoán")
         diag = st.session_state.diagnosis
@@ -204,7 +214,7 @@ if uploaded is not None:
                 st.info(f"Chưa có mục tri thức cho: {', '.join(unknown)} – sẽ dùng tìm kiếm ngữ nghĩa.")
 
     if st.session_state.diagnosis and st.button("📋 Xuất phác đồ điều trị từ Kho tri thức RAG",
-                                                type="primary", use_container_width=True):
+                                                type="primary", width="stretch"):
         names = ", ".join(n for n, _, _ in st.session_state.diagnosis)
         auto_query = (f"Mô hình YOLOv8 vừa phát hiện lá cây bị bệnh: {names}. Hãy giải thích "
                       f"triệu chứng, nguyên nhân gây bệnh và cách điều trị sinh học/phòng ngừa.")

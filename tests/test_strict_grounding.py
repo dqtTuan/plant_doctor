@@ -1,4 +1,3 @@
-import pytest
 from plant_doctor.pipeline import PlantDoctorPipeline
 from plant_doctor.prompts import SYSTEM_PROMPT
 

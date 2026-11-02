@@ -7,19 +7,22 @@ Gom toàn bộ logic AI:
 - Sinh stream câu trả lời qua mô hình ngôn ngữ Qwen2.5 LoRA
 - Cơ chế dự phòng an toàn (Graceful Fallback) khi thiếu model
 """
+import logging
 import os
 from threading import Thread
 from typing import Any, Iterator
 
 import numpy as np
-import torch
 from PIL import Image
+import torch
 
 from plant_doctor.config import (DEFAULT_MAX_CONTEXT_DOCS, DEFAULT_MAX_NEW_TOKENS,
                                  EMBED_DIR, FAISS_DIR, LLM_MERGED_DIR, PGVECTOR_TABLE,
-                                 PGVECTOR_URL, YOLO_WEIGHTS)
-from plant_doctor.knowledge import entry_to_answer, entry_to_text, is_healthy, lookup
-from plant_doctor.prompts import build_messages, format_context
+                                 PGVECTOR_URL, RERANKER_DIR, RETRIEVE_CANDIDATES, YOLO_WEIGHTS)
+from plant_doctor.knowledge import entry_to_answer, entry_to_text, lookup
+from plant_doctor.prompts import format_context
+
+logger = logging.getLogger(__name__)
 
 # Đảm bảo môi trường chạy offline
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -30,8 +33,14 @@ class PlantDoctorPipeline:
     def __init__(self, load_models: bool = True):
         self.yolo = None
         self.vector_store = None
+        self.index_manager = None
+        self.bm25_index = None
+        self.bm25_version = -1
+        self.reranker = None
+        self.pg_store = None
         self.tokenizer = None
         self.llm = None
+        self.embeddings = None
 
         if load_models:
             self.load_all_models()
@@ -49,35 +58,34 @@ class PlantDoctorPipeline:
             try:
                 from plant_doctor.rag.pgvector_store import PGVectorStore
                 from langchain_huggingface import HuggingFaceEmbeddings
-                self.pg_store = PGVectorStore(connection_url=PGVECTOR_URL, table_name=PGVECTOR_TABLE)
                 self.embeddings = HuggingFaceEmbeddings(
                     model_name=str(EMBED_DIR),
                     model_kwargs={"device": "cuda" if torch.cuda.is_available() else "cpu"},
                     encode_kwargs={"normalize_embeddings": True},
                 )
+                self.pg_store = PGVectorStore(
+                    connection_url=PGVECTOR_URL,
+                    table_name=PGVECTOR_TABLE,
+                    embeddings=self.embeddings,
+                )
                 self.vector_store = self.pg_store
                 return self.vector_store
             except Exception as e:
-                pass
+                logger.warning("pgvector unavailable, falling back to FAISS: %s", e)
 
         # 2. Fallback sang FAISS cục bộ
-        if not FAISS_DIR.exists() or not EMBED_DIR.exists():
+        if not EMBED_DIR.exists():
             return None
-        from langchain_community.vectorstores import FAISS
-        from langchain_community.vectorstores.utils import DistanceStrategy
         from langchain_huggingface import HuggingFaceEmbeddings
+        from plant_doctor.rag.index_store import FaissIndexManager
 
         self.embeddings = HuggingFaceEmbeddings(
             model_name=str(EMBED_DIR),
             model_kwargs={"device": "cuda" if torch.cuda.is_available() else "cpu"},
             encode_kwargs={"normalize_embeddings": True},
         )
-        self.vector_store = FAISS.load_local(
-            str(FAISS_DIR),
-            self.embeddings,
-            allow_dangerous_deserialization=True,
-            distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,
-        )
+        self.index_manager = FaissIndexManager(FAISS_DIR, self.embeddings)
+        self.vector_store = self.index_manager.store
         return self.vector_store
 
     def load_llm(self) -> tuple[Any, Any]:
@@ -89,15 +97,22 @@ class PlantDoctorPipeline:
         self.tokenizer = AutoTokenizer.from_pretrained(str(LLM_MERGED_DIR))
         model = AutoModelForCausalLM.from_pretrained(
             str(LLM_MERGED_DIR),
-            torch_dtype=torch.float16 if cuda else torch.float32,
+            dtype=torch.float16 if cuda else torch.float32,
             device_map="auto" if cuda else None,
         )
         self.llm = model.eval()
         return self.tokenizer, self.llm
 
+    def load_reranker(self) -> Any:
+        from plant_doctor.rag.reranker import load_reranker
+
+        self.reranker = load_reranker(RERANKER_DIR)
+        return self.reranker
+
     def load_all_models(self) -> None:
         self.load_yolo()
         self.load_vector_store()
+        self.load_reranker()
         self.load_llm()
 
     def diagnose_image(self, image: Image.Image, conf_thr: float = 0.40) -> tuple[list[tuple[str, float, dict | None]], np.ndarray | None]:
@@ -116,39 +131,52 @@ class PlantDoctorPipeline:
         return diagnosis, annotated
 
     def retrieve_context(self, query: str, keys: list[str] | None = None, max_docs: int = DEFAULT_MAX_CONTEXT_DOCS) -> list:
-        """Truy xuất lai / Open Semantic Retrieval từ Vector Store (hỗ trợ cả FAISS & pgvector)."""
+        """Truy xuất lai (Hybrid BM25 + Dense Search) kèm lọc ngưỡng tin cậy."""
         keys = keys or []
         if self.vector_store is None:
             # Chế độ dự phòng khi thiếu Vector DB
             return [entry_to_text(e) for e in (lookup(k) for k in keys) if e]
 
-        from plant_doctor.rag.pgvector_store import PGVectorStore
         from plant_doctor.rag.query_expansion import label_to_query
-        docs, seen = [], set()
+        from plant_doctor.rag.retriever import BM25Index, HybridRetriever
 
-        # 1. Mở rộng truy vấn theo nhãn phát hiện từ YOLO nếu có
-        for key in keys:
-            expanded_q = label_to_query(key)
-            if isinstance(self.vector_store, PGVectorStore):
-                query_emb = self.embeddings.embed_query(expanded_q)
-                docs += self.vector_store.similarity_search(query_emb, k=1)
-            else:
-                docs += self.vector_store.similarity_search(expanded_q, k=1)
+        queries = [query]
+        for k in keys:
+            queries.append(label_to_query(k))
+        rerank_query = query if not keys else f"{query}. {label_to_query(keys[0])}"
 
-        # 2. Open Semantic Search theo câu hỏi trực tiếp của người dùng
+        # 1. Quản lý chỉ mục BM25 (chỉ khi có index_manager với FAISS)
+        bm25 = None
+        if self.index_manager is not None:
+            if self.bm25_index is None or self.bm25_version != self.index_manager.version:
+                docs = self.index_manager.all_documents()
+                self.bm25_index = BM25Index(docs)
+                self.bm25_version = self.index_manager.version
+            bm25 = self.bm25_index
+
+        # 2. Xây dựng dense search callable
+        from plant_doctor.rag.pgvector_store import PGVectorStore
         if isinstance(self.vector_store, PGVectorStore):
-            query_emb = self.embeddings.embed_query(query)
-            docs += self.vector_store.similarity_search(query_emb, k=max_docs)
+            def dense_search(q: str, k: int):
+                emb = self.embeddings.embed_query(q)
+                return self.vector_store.similarity_search_with_score(emb, k=k)
         else:
-            docs += self.vector_store.similarity_search(query, k=max_docs)
+            def dense_search(q: str, k: int):
+                if hasattr(self.vector_store, "similarity_search_with_score"):
+                    return self.vector_store.similarity_search_with_score(q, k=k)
+                elif hasattr(self.vector_store, "similarity_search"):
+                    docs = self.vector_store.similarity_search(q, k=k)
+                    return [(d, 1.0) for d in docs]
+                return []
 
-        unique = []
-        for d in docs:
-            content = d if isinstance(d, str) else d.page_content
-            if content not in seen:
-                seen.add(content)
-                unique.append(d)
-        return unique[:max_docs]
+        retriever = HybridRetriever(
+            dense=dense_search,
+            bm25=bm25,
+            reranker=self.reranker,
+            candidates=RETRIEVE_CANDIDATES,
+            top_k=max_docs,
+        )
+        return retriever.retrieve(queries, rerank_query)
 
     def stream_answer(self, messages: list[dict], max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS) -> Iterator[str]:
         """Sinh chuỗi câu trả lời streaming từ mô hình ngôn ngữ."""
@@ -171,10 +199,16 @@ class PlantDoctorPipeline:
         Thread(target=self.llm.generate, kwargs=kwargs, daemon=True).start()
         yield from streamer
 
-    def fallback_answer(self, diagnosis: list[tuple[str, float, dict | None]], texts: list[str]) -> str:
+    def fallback_answer(
+        self,
+        diagnosis: list[tuple[str, float, dict | None]],
+        docs: list | None = None,
+        texts: list | None = None,
+    ) -> str:
         """Chế độ dự phòng khi không có LLM: ưu tiên tài liệu thực tế của người dùng."""
-        if texts:
-            return "Chưa có mô hình ngôn ngữ cục bộ. Trích đoạn tài liệu từ kho tri thức của bạn:\n\n" + format_context(texts)
+        target_docs = docs if docs is not None else (texts or [])
+        if target_docs:
+            return "Chưa có mô hình ngôn ngữ cục bộ. Trích đoạn tài liệu từ kho tri thức của bạn:\n\n" + format_context(target_docs)
         entries = [e for _, _, e in diagnosis if e and ("symptoms" in e or "bio_treatment" in e)]
         if entries:
             return "\n\n---\n\n".join(entry_to_answer(e) for e in entries)

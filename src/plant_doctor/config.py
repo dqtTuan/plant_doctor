@@ -28,6 +28,10 @@ YOLO_WEIGHTS = MODELS_DIR / YOLO_NAME / "weights" / "best.pt"
 EMBED_BASE = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 EMBED_DIR = MODELS_DIR / "custom_embedding"
 
+# Mô hình xếp hạng lại Cross-Encoder (Reranker) đa ngôn ngữ
+RERANKER_BASE = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
+RERANKER_DIR = MODELS_DIR / "reranker"
+
 # Mô hình ngôn ngữ nhỏ gốc để fine-tune LoRA
 LLM_BASE = "Qwen/Qwen2.5-1.5B-Instruct"
 LLM_ADAPTER_DIR = MODELS_DIR / "custom_llm_lora_adapter"   # chỉ trọng số LoRA
@@ -40,11 +44,29 @@ FAISS_DIR = ROOT / "vector_store" / "faiss_index"
 SEED = 42
 
 
-# --- Tối ưu hóa suy luận (Inference Latency) ---
-DEFAULT_MAX_CONTEXT_DOCS = 2
+# --- Tối ưu hóa suy luận & Truy xuất lai ---
+DEFAULT_MAX_CONTEXT_DOCS = 4
 DEFAULT_MAX_NEW_TOKENS = 256
+RETRIEVE_CANDIDATES = 20
+RRF_K = 60
+DENSE_MIN_SCORE = 0.35
+RERANK_MIN_SCORE = 0.0
 
 
 # --- PostgreSQL (pgvector) ---
 PGVECTOR_URL = os.environ.get("PGVECTOR_URL", "")
 PGVECTOR_TABLE = "plant_doctor_embeddings"
+
+
+def embed_max_tokens(embed_dir: Path | str = EMBED_DIR) -> int:
+    """Đọc giới hạn độ dài token từ cấu hình mô hình embedding (mặc định 126)."""
+    cfg_file = Path(embed_dir) / "sentence_bert_config.json"
+    if cfg_file.exists():
+        import json
+        try:
+            cfg = json.loads(cfg_file.read_text(encoding="utf-8"))
+            if "max_seq_length" in cfg:
+                return max(16, int(cfg["max_seq_length"]) - 2)
+        except Exception:
+            pass
+    return 126

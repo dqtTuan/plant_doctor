@@ -19,7 +19,7 @@ from transformers import (AutoModelForCausalLM, AutoTokenizer, DataCollatorForSe
                           TrainingArguments)
 
 from plant_doctor.config import (LLM_ADAPTER_DIR, LLM_BASE, LLM_CHECKPOINT_DIR, LLM_MERGED_DIR,
-                                 MODELS_DIR, SEED, TRAIN_DATA_DIR)
+                                 SEED, TRAIN_DATA_DIR)
 from plant_doctor.knowledge import entry_to_answer, entry_to_text, load_kb
 from plant_doctor.prompts import build_messages, format_context
 
@@ -62,7 +62,7 @@ def extract_entries_from_markdown() -> list:
         content = md_file.read_text(encoding="utf-8")
         blocks = re.split(r"\n##\s+", content)
         for block in blocks[1:]:
-            lines = [l.strip() for l in block.splitlines() if l.strip()]
+            lines = [line.strip() for line in block.splitlines() if line.strip()]
             if not lines:
                 continue
             title_line = lines[0]
@@ -127,7 +127,7 @@ def build_samples(kb=None, rng=None):
             })
     extra = TRAIN_DATA_DIR / "llm_extra.jsonl"
     if extra.exists():
-        samples += [json.loads(l) for l in extra.read_text(encoding="utf-8").splitlines() if l.strip()]
+        samples += [json.loads(line) for line in extra.read_text(encoding="utf-8").splitlines() if line.strip()]
     rng.shuffle(samples)
     return samples
 
@@ -167,11 +167,11 @@ def train_custom_llm(base_model: str = LLM_BASE,
     samples = build_samples(load_kb(), rng)
     ds = Dataset.from_list(samples).map(make_tokenize_fn(tok, max_length),
                                         remove_columns=["context", "question", "answer"])
-    ds = ds.filter(lambda x: any(l != -100 for l in x["labels"]))
+    ds = ds.filter(lambda x: any(lbl != -100 for lbl in x["labels"]))
     print(f"Số mẫu huấn luyện: {len(ds)}")
 
     model = AutoModelForCausalLM.from_pretrained(
-        base_model, torch_dtype=torch.float32, device_map="auto" if cuda else None)
+        base_model, dtype=torch.float32, device_map="auto" if cuda else None)
     model.config.use_cache = False
     model.gradient_checkpointing_enable()
     model.enable_input_require_grads()
@@ -222,7 +222,7 @@ def train_custom_llm(base_model: str = LLM_BASE,
     if cuda:
         torch.cuda.empty_cache()
     base = AutoModelForCausalLM.from_pretrained(
-        base_model, torch_dtype=torch.float16 if cuda else torch.float32,
+        base_model, dtype=torch.float16 if cuda else torch.float32,
         device_map="auto" if cuda else None)
     merged = PeftModel.from_pretrained(base, str(out_adapter)).merge_and_unload()
     out_merged = Path(merged_dir)
