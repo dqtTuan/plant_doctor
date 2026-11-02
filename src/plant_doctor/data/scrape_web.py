@@ -85,12 +85,20 @@ def extract_html_to_markdown(html_content: str, url: str = "") -> tuple[str, str
     # 1. Trích xuất tiêu đề
     title = ""
     og_title = soup.find("meta", property="og:title")
-    if og_title and og_title.get("content"):
-        title = og_title["content"].strip()
-    elif soup.find("h1"):
-        title = soup.find("h1").get_text().strip()
-    elif soup.title:
-        title = soup.title.get_text().strip()
+    if og_title and hasattr(og_title, "get"):
+        content_val = og_title.get("content")
+        if isinstance(content_val, list):
+            title = " ".join(str(item) for item in content_val).strip()
+        elif isinstance(content_val, str):
+            title = content_val.strip()
+
+    if not title:
+        h1_tag = soup.find("h1")
+        if h1_tag:
+            title = h1_tag.get_text().strip()
+        elif soup.title:
+            title = soup.title.get_text().strip()
+
     title = title or "Tài liệu chuyên môn nông nghiệp"
 
     # 2. Xóa các thẻ rác, quảng cáo, menu
