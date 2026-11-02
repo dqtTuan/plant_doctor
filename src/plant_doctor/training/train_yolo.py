@@ -12,6 +12,50 @@ from ultralytics import YOLO
 from plant_doctor.config import DATASET_DIR, SEED, YOLO_BASE, YOLO_NAME, YOLO_PROJECT, YOLO_WEIGHTS
 
 
+def normalize_data_yaml(yaml_path: Path | str) -> Path:
+    """Tự động kiểm tra và chuẩn hóa cấu hình data.yaml (sửa lỗi xuất relative paths kiểu ../ của Roboflow)."""
+    yaml_path = Path(yaml_path)
+    if not yaml_path.exists():
+        return yaml_path
+
+    try:
+        import yaml
+        with open(yaml_path, "r", encoding="utf-8") as f:
+            cfg = yaml.safe_load(f)
+        if not isinstance(cfg, dict):
+            return yaml_path
+
+        changed = False
+        base_dir = yaml_path.parent
+
+        # Chuẩn hóa path về thư mục chứa data.yaml nếu chưa có hoặc không trỏ tới thư mục tồn tại
+        current_path = cfg.get("path")
+        if not current_path or not Path(current_path).is_absolute() or not Path(current_path).exists():
+            cfg["path"] = str(base_dir.resolve()).replace("\\", "/")
+            changed = True
+
+        root_path = Path(cfg["path"])
+        for key in ["train", "val", "test"]:
+            val = cfg.get(key)
+            if not isinstance(val, str):
+                continue
+            # Bỏ tiền tố ../ nếu thư mục thực tế nằm ngay trong root_path
+            if val.startswith("../"):
+                stripped = val[3:]
+                if (root_path / stripped).exists():
+                    cfg[key] = stripped
+                    changed = True
+
+        if changed:
+            with open(yaml_path, "w", encoding="utf-8") as f:
+                yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)
+            print(f"Đã tự động chuẩn hóa đường dẫn trong {yaml_path}")
+    except Exception as e:
+        print(f"Cảnh báo khi kiểm tra {yaml_path}: {e}")
+
+    return yaml_path
+
+
 def train_yolo(data_yaml: Path | str = DATASET_DIR / "data.yaml",
                model_weights: Path | str = YOLO_BASE,
                epochs: int = 100,
@@ -21,6 +65,7 @@ def train_yolo(data_yaml: Path | str = DATASET_DIR / "data.yaml",
                project: Path | str = YOLO_PROJECT,
                name: str = YOLO_NAME) -> dict:
     """Huấn luyện mô hình YOLOv8 trên tập dữ liệu và đánh giá trên tập test."""
+    data_yaml = normalize_data_yaml(data_yaml)
     model = YOLO(str(model_weights))
     model.train(
         data=str(data_yaml),
