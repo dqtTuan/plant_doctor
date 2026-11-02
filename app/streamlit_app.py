@@ -66,6 +66,7 @@ with st.sidebar:
     st.subheader("Trạng thái mô hình")
     st.write(("✅" if pipeline.yolo else "❌") + " YOLOv8 (`best.pt`)")
     st.write(("✅" if pipeline.vector_store else "⚠️") + " Embedding + FAISS")
+    st.write(("✅" if pipeline.reranker else "⚪") + " Cross-Encoder Reranker")
     st.write(("✅" if pipeline.llm else "⚠️") + " LLM LoRA cục bộ")
     if not pipeline.vector_store:
         st.caption("Thiếu Vector DB → dùng thông tin phân tích nhãn.")

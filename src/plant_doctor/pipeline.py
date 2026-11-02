@@ -18,7 +18,7 @@ import torch
 
 from plant_doctor.config import (DEFAULT_MAX_CONTEXT_DOCS, DEFAULT_MAX_NEW_TOKENS,
                                  EMBED_DIR, FAISS_DIR, LLM_MERGED_DIR, PGVECTOR_TABLE,
-                                 PGVECTOR_URL, RETRIEVE_CANDIDATES, YOLO_WEIGHTS)
+                                 PGVECTOR_URL, RERANKER_DIR, RETRIEVE_CANDIDATES, YOLO_WEIGHTS)
 from plant_doctor.knowledge import entry_to_answer, entry_to_text, lookup
 from plant_doctor.prompts import format_context
 
@@ -103,9 +103,16 @@ class PlantDoctorPipeline:
         self.llm = model.eval()
         return self.tokenizer, self.llm
 
+    def load_reranker(self) -> Any:
+        from plant_doctor.rag.reranker import load_reranker
+
+        self.reranker = load_reranker(RERANKER_DIR)
+        return self.reranker
+
     def load_all_models(self) -> None:
         self.load_yolo()
         self.load_vector_store()
+        self.load_reranker()
         self.load_llm()
 
     def diagnose_image(self, image: Image.Image, conf_thr: float = 0.40) -> tuple[list[tuple[str, float, dict | None]], np.ndarray | None]:

@@ -43,6 +43,7 @@ pd-train-embedding = "plant_doctor.training.train_embedding:main"
 pd-train-llm = "plant_doctor.training.train_llm:main"
 pd-build-index = "plant_doctor.rag.build_index:main"
 pd-eval-rag = "plant_doctor.rag.evaluate:main"
+pd-download-reranker = "plant_doctor.rag.download_models:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

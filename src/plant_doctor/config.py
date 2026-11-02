@@ -28,6 +28,10 @@ YOLO_WEIGHTS = MODELS_DIR / YOLO_NAME / "weights" / "best.pt"
 EMBED_BASE = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 EMBED_DIR = MODELS_DIR / "custom_embedding"
 
+# Mô hình xếp hạng lại Cross-Encoder (Reranker) đa ngôn ngữ
+RERANKER_BASE = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
+RERANKER_DIR = MODELS_DIR / "reranker"
+
 # Mô hình ngôn ngữ nhỏ gốc để fine-tune LoRA
 LLM_BASE = "Qwen/Qwen2.5-1.5B-Instruct"
 LLM_ADAPTER_DIR = MODELS_DIR / "custom_llm_lora_adapter"   # chỉ trọng số LoRA
