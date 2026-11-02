@@ -48,3 +48,17 @@ DEFAULT_MAX_NEW_TOKENS = 256
 # --- PostgreSQL (pgvector) ---
 PGVECTOR_URL = os.environ.get("PGVECTOR_URL", "")
 PGVECTOR_TABLE = "plant_doctor_embeddings"
+
+
+def embed_max_tokens(embed_dir: Path | str = EMBED_DIR) -> int:
+    """Đọc giới hạn độ dài token từ cấu hình mô hình embedding (mặc định 126)."""
+    cfg_file = Path(embed_dir) / "sentence_bert_config.json"
+    if cfg_file.exists():
+        import json
+        try:
+            cfg = json.loads(cfg_file.read_text(encoding="utf-8"))
+            if "max_seq_length" in cfg:
+                return max(16, int(cfg["max_seq_length"]) - 2)
+        except Exception:
+            pass
+    return 126
