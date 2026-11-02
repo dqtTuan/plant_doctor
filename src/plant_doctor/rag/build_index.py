@@ -17,27 +17,13 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from plant_doctor.config import EMBED_DIR, FAISS_DIR, KB_DIR, PGVECTOR_TABLE, PGVECTOR_URL
 from plant_doctor.knowledge import load_kb
+from plant_doctor.rag.loaders import load_directory
 from plant_doctor.rag.semantic_chunking import split_documents_semantically, tag_disease
 
 
 def load_documents(kb_dir: Path | str = KB_DIR) -> list[Document]:
     """Nạp tất cả các tài liệu file rời (.pdf, .md, .txt) từ thư mục tri thức."""
-    kb_path = Path(kb_dir)
-    docs = []
-    for path in sorted(kb_path.rglob("*")):
-        if path.name.lower().startswith("readme"):
-            continue
-        suffix = path.suffix.lower()
-        if suffix == ".pdf":
-            from pypdf import PdfReader
-            for i, page in enumerate(PdfReader(str(path)).pages):
-                text = page.extract_text() or ""
-                if text.strip():
-                    docs.append(Document(page_content=text, metadata={"source": path.name, "page": i + 1}))
-        elif suffix in (".md", ".txt"):
-            docs.append(Document(page_content=path.read_text(encoding="utf-8"),
-                                 metadata={"source": path.name}))
-    return docs
+    return load_directory(kb_dir)
 
 
 def chunk_documents(docs: list[Document], chunk_size: int = 1000, chunk_overlap: int = 200,

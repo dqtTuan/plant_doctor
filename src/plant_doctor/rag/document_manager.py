@@ -9,6 +9,7 @@ from langchain_core.documents import Document
 
 from plant_doctor.config import KB_DIR
 from plant_doctor.rag.build_index import chunk_documents_by_type
+from plant_doctor.rag.loaders import load_file
 
 
 class DocumentManager:
@@ -52,29 +53,7 @@ class DocumentManager:
     def load_file_documents(self, file_name: str) -> list[Document]:
         """Trích xuất danh sách Document từ một file cụ thể."""
         target = self.kb_dir / Path(file_name).name
-        if not target.exists():
-            return []
-
-        suffix = target.suffix.lower()
-        docs = []
-        if suffix == ".pdf":
-            from pypdf import PdfReader
-            reader = PdfReader(str(target))
-            for i, page in enumerate(reader.pages):
-                text = page.extract_text() or ""
-                if text.strip():
-                    docs.append(Document(
-                        page_content=text,
-                        metadata={"source": target.name, "page": i + 1}
-                    ))
-        elif suffix in (".md", ".txt"):
-            text = target.read_text(encoding="utf-8")
-            if text.strip():
-                docs.append(Document(
-                    page_content=text,
-                    metadata={"source": target.name}
-                ))
-        return docs
+        return load_file(target)
 
     def ingest_file(self, file_name: str, vector_store: Any, embeddings: Any, chunker_type: str = "semantic") -> int:
         """Phân đoạn ngữ nghĩa và thêm tài liệu vào Vector Store trực tiếp."""
