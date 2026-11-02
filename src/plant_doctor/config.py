@@ -40,9 +40,13 @@ FAISS_DIR = ROOT / "vector_store" / "faiss_index"
 SEED = 42
 
 
-# --- Tối ưu hóa suy luận (Inference Latency) ---
-DEFAULT_MAX_CONTEXT_DOCS = 2
+# --- Tối ưu hóa suy luận & Truy xuất lai ---
+DEFAULT_MAX_CONTEXT_DOCS = 4
 DEFAULT_MAX_NEW_TOKENS = 256
+RETRIEVE_CANDIDATES = 20
+RRF_K = 60
+DENSE_MIN_SCORE = 0.35
+RERANK_MIN_SCORE = 0.0
 
 
 # --- PostgreSQL (pgvector) ---

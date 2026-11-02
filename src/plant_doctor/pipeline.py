@@ -18,7 +18,7 @@ import torch
 
 from plant_doctor.config import (DEFAULT_MAX_CONTEXT_DOCS, DEFAULT_MAX_NEW_TOKENS,
                                  EMBED_DIR, FAISS_DIR, LLM_MERGED_DIR, PGVECTOR_TABLE,
-                                 PGVECTOR_URL, YOLO_WEIGHTS)
+                                 PGVECTOR_URL, RETRIEVE_CANDIDATES, YOLO_WEIGHTS)
 from plant_doctor.knowledge import entry_to_answer, entry_to_text, lookup
 from plant_doctor.prompts import format_context
 
@@ -34,6 +34,9 @@ class PlantDoctorPipeline:
         self.yolo = None
         self.vector_store = None
         self.index_manager = None
+        self.bm25_index = None
+        self.bm25_version = -1
+        self.reranker = None
         self.pg_store = None
         self.tokenizer = None
         self.llm = None
@@ -121,39 +124,52 @@ class PlantDoctorPipeline:
         return diagnosis, annotated
 
     def retrieve_context(self, query: str, keys: list[str] | None = None, max_docs: int = DEFAULT_MAX_CONTEXT_DOCS) -> list:
-        """Truy xuất lai / Open Semantic Retrieval từ Vector Store (hỗ trợ cả FAISS & pgvector)."""
+        """Truy xuất lai (Hybrid BM25 + Dense Search) kèm lọc ngưỡng tin cậy."""
         keys = keys or []
         if self.vector_store is None:
             # Chế độ dự phòng khi thiếu Vector DB
             return [entry_to_text(e) for e in (lookup(k) for k in keys) if e]
 
-        from plant_doctor.rag.pgvector_store import PGVectorStore
         from plant_doctor.rag.query_expansion import label_to_query
-        docs, seen = [], set()
+        from plant_doctor.rag.retriever import BM25Index, HybridRetriever
 
-        # 1. Mở rộng truy vấn theo nhãn phát hiện từ YOLO nếu có
-        for key in keys:
-            expanded_q = label_to_query(key)
-            if isinstance(self.vector_store, PGVectorStore):
-                query_emb = self.embeddings.embed_query(expanded_q)
-                docs += self.vector_store.similarity_search(query_emb, k=1)
-            else:
-                docs += self.vector_store.similarity_search(expanded_q, k=1)
+        queries = [query]
+        for k in keys:
+            queries.append(label_to_query(k))
+        rerank_query = query if not keys else f"{query}. {label_to_query(keys[0])}"
 
-        # 2. Open Semantic Search theo câu hỏi trực tiếp của người dùng
+        # 1. Quản lý chỉ mục BM25 (chỉ khi có index_manager với FAISS)
+        bm25 = None
+        if self.index_manager is not None:
+            if self.bm25_index is None or self.bm25_version != self.index_manager.version:
+                docs = self.index_manager.all_documents()
+                self.bm25_index = BM25Index(docs)
+                self.bm25_version = self.index_manager.version
+            bm25 = self.bm25_index
+
+        # 2. Xây dựng dense search callable
+        from plant_doctor.rag.pgvector_store import PGVectorStore
         if isinstance(self.vector_store, PGVectorStore):
-            query_emb = self.embeddings.embed_query(query)
-            docs += self.vector_store.similarity_search(query_emb, k=max_docs)
+            def dense_search(q: str, k: int):
+                emb = self.embeddings.embed_query(q)
+                return self.vector_store.similarity_search_with_score(emb, k=k)
         else:
-            docs += self.vector_store.similarity_search(query, k=max_docs)
+            def dense_search(q: str, k: int):
+                if hasattr(self.vector_store, "similarity_search_with_score"):
+                    return self.vector_store.similarity_search_with_score(q, k=k)
+                elif hasattr(self.vector_store, "similarity_search"):
+                    docs = self.vector_store.similarity_search(q, k=k)
+                    return [(d, 1.0) for d in docs]
+                return []
 
-        unique = []
-        for d in docs:
-            content = d if isinstance(d, str) else d.page_content
-            if content not in seen:
-                seen.add(content)
-                unique.append(d)
-        return unique[:max_docs]
+        retriever = HybridRetriever(
+            dense=dense_search,
+            bm25=bm25,
+            reranker=self.reranker,
+            candidates=RETRIEVE_CANDIDATES,
+            top_k=max_docs,
+        )
+        return retriever.retrieve(queries, rerank_query)
 
     def stream_answer(self, messages: list[dict], max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS) -> Iterator[str]:
         """Sinh chuỗi câu trả lời streaming từ mô hình ngôn ngữ."""

@@ -28,6 +28,7 @@ dependencies = [
     "tqdm>=4.66,<5",
     "streamlit>=1.66,<2",
     "requests>=2.32.4,<3",
+    "rank-bm25>=0.2.2,<0.3",
 ]
 
 [project.optional-dependencies]

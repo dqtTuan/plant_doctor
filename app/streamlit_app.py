@@ -141,8 +141,7 @@ def answer(question: str) -> str:
 
     # 2. Truy xuất RAG và suy luận LLM cho câu hỏi tự do
     keys = [e["key"] for _, _, e in diag if e]
-    names = ", ".join(c for c, _, _ in diag)
-    query = f"{question} {names}".strip()
+    query = question.strip()
 
     docs = pipeline.retrieve_context(query, keys, max_docs=MAX_CONTEXT_DOCS)
     texts = [d if isinstance(d, str) else d.page_content for d in docs]
