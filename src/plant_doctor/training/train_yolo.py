@@ -62,7 +62,7 @@ def train_yolo(data_yaml: Path | str = DATASET_DIR / "data.yaml",
                epochs: int = 100,
                batch: int = 16,
                imgsz: int = 640,
-               freeze: int = 10,
+               freeze: int = 0,
                project: Path | str = YOLO_PROJECT,
                name: str = YOLO_NAME,
                device: str | int | None = None,
@@ -117,7 +117,7 @@ def main():
     ap.add_argument("--batch", type=int, default=16,
                     help="Kích thước batch (16, 32, 64 hoặc -1 để AutoBatch tối đa VRAM GPU)")
     ap.add_argument("--imgsz", type=int, default=640)
-    ap.add_argument("--freeze", type=int, default=10,
+    ap.add_argument("--freeze", type=int, default=0,
                     help="Số layer đầu bị đóng băng (10 = backbone YOLOv8, 0 = không đóng băng)")
     ap.add_argument("--device", default=None,
                     help="Thiết bị tính toán (0, 1, 'cpu' hoặc None để tự động chọn GPU)")
