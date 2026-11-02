@@ -72,7 +72,7 @@ with st.sidebar:
     if not pipeline.llm:
         st.caption("Thiếu LLM → trả lời bằng tri thức có cấu trúc (không sinh văn bản).")
     st.caption(f"Thiết bị: {'GPU ' + torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
-    if st.button("🗑️ Xóa hội thoại", use_container_width=True):
+    if st.button("🗑️ Xóa hội thoại", width="stretch"):
         st.session_state.messages = []
         st.rerun()
 
@@ -86,7 +86,7 @@ with st.sidebar:
         key="kb_uploader",
     )
     if uploaded_kb is not None:
-        if st.button("📥 Nạp vào Vector DB", use_container_width=True):
+        if st.button("📥 Nạp vào Vector DB", width="stretch"):
             with st.spinner("Đang xử lý và phân đoạn tri thức..."):
                 doc_mgr.save_uploaded_file(uploaded_kb.name, uploaded_kb.getvalue())
                 if pipeline.vector_store and pipeline.embeddings:
@@ -180,11 +180,11 @@ if uploaded is not None:
     col1, col2, col3 = st.columns([1, 1, 0.8])
     with col1:
         st.markdown("##### Ảnh gốc")
-        st.image(image, use_container_width=True)
+        st.image(image, width="stretch")
     with col2:
         st.markdown("##### Khoanh vùng bệnh (YOLOv8)")
         if st.session_state.get("annotated") is not None:
-            st.image(st.session_state.annotated, use_container_width=True)
+            st.image(st.session_state.annotated, width="stretch")
     with col3:
         st.markdown("##### Kết quả chẩn đoán")
         diag = st.session_state.diagnosis
@@ -204,7 +204,7 @@ if uploaded is not None:
                 st.info(f"Chưa có mục tri thức cho: {', '.join(unknown)} – sẽ dùng tìm kiếm ngữ nghĩa.")
 
     if st.session_state.diagnosis and st.button("📋 Xuất phác đồ điều trị từ Kho tri thức RAG",
-                                                type="primary", use_container_width=True):
+                                                type="primary", width="stretch"):
         names = ", ".join(n for n, _, _ in st.session_state.diagnosis)
         auto_query = (f"Mô hình YOLOv8 vừa phát hiện lá cây bị bệnh: {names}. Hãy giải thích "
                       f"triệu chứng, nguyên nhân gây bệnh và cách điều trị sinh học/phòng ngừa.")

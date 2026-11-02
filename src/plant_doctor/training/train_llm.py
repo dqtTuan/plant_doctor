@@ -171,7 +171,7 @@ def train_custom_llm(base_model: str = LLM_BASE,
     print(f"Số mẫu huấn luyện: {len(ds)}")
 
     model = AutoModelForCausalLM.from_pretrained(
-        base_model, torch_dtype=torch.float32, device_map="auto" if cuda else None)
+        base_model, dtype=torch.float32, device_map="auto" if cuda else None)
     model.config.use_cache = False
     model.gradient_checkpointing_enable()
     model.enable_input_require_grads()
@@ -222,7 +222,7 @@ def train_custom_llm(base_model: str = LLM_BASE,
     if cuda:
         torch.cuda.empty_cache()
     base = AutoModelForCausalLM.from_pretrained(
-        base_model, torch_dtype=torch.float16 if cuda else torch.float32,
+        base_model, dtype=torch.float16 if cuda else torch.float32,
         device_map="auto" if cuda else None)
     merged = PeftModel.from_pretrained(base, str(out_adapter)).merge_and_unload()
     out_merged = Path(merged_dir)

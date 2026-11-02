@@ -89,7 +89,7 @@ class PlantDoctorPipeline:
         self.tokenizer = AutoTokenizer.from_pretrained(str(LLM_MERGED_DIR))
         model = AutoModelForCausalLM.from_pretrained(
             str(LLM_MERGED_DIR),
-            torch_dtype=torch.float16 if cuda else torch.float32,
+            dtype=torch.float16 if cuda else torch.float32,
             device_map="auto" if cuda else None,
         )
         self.llm = model.eval()

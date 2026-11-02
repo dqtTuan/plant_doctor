@@ -1,6 +1,6 @@
 """Bước 2: Tinh chỉnh mô hình nhúng (sentence-transformers) trên dữ liệu bệnh cây.
 
-Cặp huấn luyện (truy vấn -> đoạn tài liệu) được sinh tự động từ data/knowledge_base/diseases.json
+Cặp huấn luyện (truy vấn -> đoạn tài liệu) được sinh tự động từ Markdown trong kho tri thức
 và có thể bổ sung trong data/training/embedding_pairs.jsonl: {"query": "...", "passage": "..."}.
 
 Hàm mất mát: MultipleNegativesRankingLoss (InfoNCE với negative trong batch).
@@ -10,20 +10,30 @@ import json
 import random
 from pathlib import Path
 
+from datasets import Dataset
+from sentence_transformers import (
+    SentenceTransformer,
+    SentenceTransformerTrainer,
+    SentenceTransformerTrainingArguments,
+)
+from sentence_transformers.sentence_transformer.losses import MultipleNegativesRankingLoss
+from sentence_transformers.sentence_transformer.training_args import BatchSamplers
 import torch
-from sentence_transformers import InputExample, SentenceTransformer, losses
-from sentence_transformers.datasets import NoDuplicatesDataLoader
 
-from plant_doctor.config import EMBED_BASE, EMBED_DIR, SEED, TRAIN_DATA_DIR
+from plant_doctor.config import EMBED_BASE, EMBED_DIR, MODELS_DIR, SEED, TRAIN_DATA_DIR
 from plant_doctor.knowledge import entry_to_text, load_kb, section_text
 
 
 def queries_for(e):
     crop = e["crop_vi"].lower()
     name_q = {
-        e["name_en"], e["name_vi"], e["key"].replace("_", " "),
-        f"{e['crop_en']} {e['name_en']}", f"{e['name_vi']} trên cây {crop}",
-        f"Mô hình YOLOv8 phát hiện {e['crop_en']} {e['name_en']}", e["pathogen"],
+        e["name_en"],
+        e["name_vi"],
+        e["key"].replace("_", " "),
+        f"{e['crop_en']} {e['name_en']}",
+        f"{e['name_vi']} trên cây {crop}",
+        f"Mô hình YOLOv8 phát hiện {e['crop_en']} {e['name_en']}",
+        e["pathogen"],
         *e.get("aliases", []),
     }
     section_q = [
@@ -39,8 +49,9 @@ def queries_for(e):
 
 def extract_pairs_from_markdown():
     """Trích xuất cặp câu hỏi - tài liệu trực tiếp từ các file Markdown trong kho tri thức."""
-    from plant_doctor.config import KB_DIR
     import re
+    from plant_doctor.config import KB_DIR
+
     pairs = []
     for md_file in Path(KB_DIR).glob("*.md"):
         if md_file.name.lower().startswith("readme"):
@@ -65,7 +76,7 @@ def build_pairs(kb=None):
             name_q, section_q = queries_for(e)
             pairs += [(q, full) for q in name_q]
             for q, field in section_q:
-                pairs.append((q, full))                    # khớp với tài liệu đầy đủ trong FAISS
+                pairs.append((q, full))  # khớp với tài liệu đầy đủ trong FAISS
                 pairs.append((q, section_text(e, field)))  # và với đúng phần nội dung liên quan
     else:
         pairs += extract_pairs_from_markdown()
@@ -79,12 +90,20 @@ def build_pairs(kb=None):
     return pairs
 
 
+def build_train_dataset(pairs: list[tuple[str, str]]) -> Dataset:
+    """Chuyển đổi danh sách cặp (anchor, positive) thành HuggingFace Dataset."""
+    anchors = [q for q, _ in pairs]
+    positives = [p for _, p in pairs]
+    return Dataset.from_dict({"anchor": anchors, "positive": positives})
+
+
 @torch.no_grad()
 def top1_accuracy(model, kb=None):
     if kb:
         docs = [entry_to_text(e) for e in kb]
     else:
         from plant_doctor.rag.build_index import load_documents
+
         docs = [d.page_content for d in load_documents()[:30]]
     if not docs:
         return 1.0
@@ -100,10 +119,12 @@ def top1_accuracy(model, kb=None):
     return hits / total
 
 
-def train_custom_embedding(base_model: str = EMBED_BASE,
-                           output_dir: Path | str = EMBED_DIR,
-                           epochs: int = 20,
-                           batch: int = 16) -> float:
+def train_custom_embedding(
+    base_model: str = EMBED_BASE,
+    output_dir: Path | str = EMBED_DIR,
+    epochs: int = 20,
+    batch: int = 16,
+) -> float:
     """Huấn luyện mô hình Embedding bằng MultipleNegativesRankingLoss và trả về top1 accuracy."""
     random.seed(SEED)
     torch.manual_seed(SEED)
@@ -115,16 +136,27 @@ def train_custom_embedding(base_model: str = EMBED_BASE,
     acc_before = top1_accuracy(model, kb)
     print(f"Top-1 retrieval TRƯỚC khi fine-tune: {acc_before:.3f}")
 
-    examples = [InputExample(texts=[q, p]) for q, p in pairs]
-    loader = NoDuplicatesDataLoader(examples, batch_size=batch)
-    loss = losses.MultipleNegativesRankingLoss(model)
-    steps = len(loader) * epochs
-    model.fit(
-        train_objectives=[(loader, loss)],
-        epochs=epochs,
-        warmup_steps=int(0.1 * steps),
-        show_progress_bar=True,
+    train_dataset = build_train_dataset(pairs)
+    loss = MultipleNegativesRankingLoss(model)
+
+    training_args = SentenceTransformerTrainingArguments(
+        output_dir=str(MODELS_DIR / "embedding_checkpoints"),
+        num_train_epochs=epochs,
+        per_device_train_batch_size=batch,
+        batch_sampler=BatchSamplers.NO_DUPLICATES,
+        seed=SEED,
+        save_strategy="no",
+        report_to="none",
     )
+
+    trainer = SentenceTransformerTrainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset,
+        loss=loss,
+    )
+    trainer.train()
+
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
     model.save(str(out_path))
