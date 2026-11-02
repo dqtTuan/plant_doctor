@@ -4,6 +4,7 @@ Prompt dùng khi fine-tune LLM và khi suy luận trong app PHẢI giống nhau,
 vì vậy cả hai đều gọi `build_messages` trong file này.
 """
 import re
+from typing import Any
 
 SYSTEM_PROMPT = (
     "Bạn là trợ lý AI thông minh kiêm chuyên gia bệnh học thực vật tư vấn cho người dân Việt Nam.\n"
@@ -29,8 +30,13 @@ def format_context(docs: list) -> str:
     return "\n\n".join(formatted)
 
 
-def extract_citations(answer: str, n_docs: int) -> list[int]:
+def extract_citations(answer: str | list[Any], n_docs: int) -> list[int]:
     """Trích xuất và lọc các chỉ số trích dẫn hợp lệ [1]..[n] từ câu trả lời."""
+    if isinstance(answer, list):
+        answer = "".join(str(chunk) for chunk in answer)
+    elif not isinstance(answer, str):
+        answer = str(answer or "")
+
     raw_matches = re.findall(r"\[(\d+)\]", answer)
     citations = []
     seen = set()

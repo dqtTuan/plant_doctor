@@ -154,7 +154,9 @@ def answer(question: str) -> str:
         text = st.write_stream(pipeline.stream_answer(messages, max_new_tokens=max_new_tokens))
 
     from plant_doctor.prompts import extract_citations
-    cited_indices = set(extract_citations(text, len(docs)))
+
+    answer_text = "".join(str(chunk) for chunk in text) if isinstance(text, list) else str(text or "")
+    cited_indices = set(extract_citations(answer_text, len(docs)))
 
     with st.expander(f"📚 Nguồn tri thức ({len(docs)})"):
         for i, d in enumerate(docs, 1):
