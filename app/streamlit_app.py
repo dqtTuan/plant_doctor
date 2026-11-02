@@ -170,7 +170,7 @@ def answer(question: str) -> str:
             st.markdown(f"**[{i}] {status_tag}** | `{src}`{page_tag}{score_tag}")
             content_str = d.page_content if hasattr(d, "page_content") else str(d)
             st.caption(content_str[:600])
-    return text
+    return answer_text
 
 
 # ---------------------------------------------------------------- Tải ảnh & chẩn đoán

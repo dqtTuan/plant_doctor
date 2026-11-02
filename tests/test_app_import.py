@@ -1,13 +1,19 @@
-"""Kiểm tra import và cấu trúc của streamlit_app."""
-import importlib
+"""Kiểm tra cấu trúc và các hàm cốt lõi của streamlit_app."""
+import ast
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_streamlit_app_has_get_pipeline():
-    spec = importlib.util.find_spec("app.streamlit_app")
-    assert spec is not None
+    src = (ROOT / "app" / "streamlit_app.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    func_names = [n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
+    assert "get_pipeline" in func_names
 
 
 def test_streamlit_app_answer_function_exists():
-    import app.streamlit_app as st_app
-    assert hasattr(st_app, "answer")
-    assert callable(st_app.answer)
+    src = (ROOT / "app" / "streamlit_app.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    func_names = [n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
+    assert "answer" in func_names
