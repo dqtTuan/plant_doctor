@@ -47,16 +47,21 @@ def queries_for(e):
     return name_q, section_q
 
 
-def extract_pairs_from_markdown():
-    """Trích xuất cặp câu hỏi - tài liệu trực tiếp từ các file Markdown trong kho tri thức."""
+def extract_pairs_from_knowledge_base() -> list[tuple[str, str]]:
+    """Trích xuất cặp câu hỏi - tài liệu từ toàn bộ file trong kho tri thức (.md, .pdf, .txt)."""
     import re
     from plant_doctor.config import KB_DIR
+    from plant_doctor.rag.loaders import load_directory
 
     pairs = []
+    # 1. Trích xuất từ Markdown
     for md_file in Path(KB_DIR).glob("*.md"):
         if md_file.name.lower().startswith("readme"):
             continue
-        content = md_file.read_text(encoding="utf-8")
+        try:
+            content = md_file.read_text(encoding="utf-8")
+        except Exception:
+            continue
         blocks = re.split(r"\n##\s+", content)
         for block in blocks[1:]:
             lines = [line.strip() for line in block.splitlines() if line.strip()]
@@ -65,7 +70,30 @@ def extract_pairs_from_markdown():
             title_line = lines[0]
             pairs.append((f"Cách phòng trị và triệu chứng của {title_line}", block))
             pairs.append((title_line, block))
+
+    # 2. Trích xuất từ các định dạng khác như PDF và TXT
+    all_docs = load_directory(KB_DIR)
+    for doc in all_docs:
+        source = doc.metadata.get("source", "")
+        if source.lower().endswith(".md"):
+            continue
+        page = doc.metadata.get("page")
+        content = doc.page_content.strip()
+        if not content or len(content) < 30:
+            continue
+        page_str = f" trang {page}" if page else ""
+        paragraphs = [p.strip() for p in content.split("\n\n") if len(p.strip()) > 30]
+        if not paragraphs:
+            paragraphs = [content]
+        for p in paragraphs:
+            first_sentence = p.split("\n")[0].split(".")[0].strip()
+            if len(first_sentence) > 10:
+                pairs.append((first_sentence, p))
+            pairs.append((f"Thông tin tài liệu {source}{page_str}", p))
+
     return pairs
+
+extract_pairs_from_markdown = extract_pairs_from_knowledge_base
 
 
 def build_pairs(kb=None):

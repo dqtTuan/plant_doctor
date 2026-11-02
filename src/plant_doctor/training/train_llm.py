@@ -51,15 +51,21 @@ def fill(tpl, e):
     return tpl.format(cls=cls, crop=e["crop_vi"].lower(), name=e["name_vi"].lower())
 
 
-def extract_entries_from_markdown() -> list:
-    """Trích xuất danh sách bệnh từ tài liệu Markdown trong kho tri thức."""
+def extract_entries_from_knowledge_base() -> list:
+    """Trích xuất danh sách bệnh từ toàn bộ tài liệu (.md, .pdf, .txt) trong kho tri thức."""
     from plant_doctor.config import KB_DIR
+    from plant_doctor.rag.loaders import load_directory
     import re
+
     entries = []
+    # 1. Trích xuất từ Markdown
     for md_file in Path(KB_DIR).glob("*.md"):
         if md_file.name.lower().startswith("readme"):
             continue
-        content = md_file.read_text(encoding="utf-8")
+        try:
+            content = md_file.read_text(encoding="utf-8")
+        except Exception:
+            continue
         blocks = re.split(r"\n##\s+", content)
         for block in blocks[1:]:
             lines = [line.strip() for line in block.splitlines() if line.strip()]
@@ -87,7 +93,37 @@ def extract_entries_from_markdown() -> list:
                 "prevention": "Vệ sinh đồng ruộng, tỉa cành thông thoáng.",
                 "aliases": [name_part],
             })
+
+    # 2. Trích xuất từ PDF và TXT
+    all_docs = load_directory(KB_DIR)
+    for doc in all_docs:
+        source = doc.metadata.get("source", "")
+        if source.lower().endswith(".md"):
+            continue
+        page = doc.metadata.get("page")
+        content = doc.page_content.strip()
+        if not content or len(content) < 50:
+            continue
+        page_label = f" (trang {page})" if page else ""
+        stem = Path(source).stem
+        entries.append({
+            "key": re.sub(r"[^0-9a-z]+", "_", stem.lower()),
+            "name_vi": f"{stem}{page_label}",
+            "name_en": stem,
+            "crop_vi": "Cây trồng",
+            "crop_en": "Crops",
+            "symptoms": content[:500],
+            "pathogen": f"Thông tin chuyên ngành từ {source}",
+            "causes": "Điều kiện canh tác thực tế.",
+            "bio_treatment": content,
+            "chemical_note": "Tuân thủ khuyến cáo bảo vệ thực vật.",
+            "prevention": "Áp dụng biện pháp canh tác bền vững.",
+            "aliases": [stem],
+        })
+
     return entries
+
+extract_entries_from_markdown = extract_entries_from_knowledge_base
 
 
 def build_samples(kb=None, rng=None):
