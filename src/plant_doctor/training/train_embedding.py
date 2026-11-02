@@ -101,22 +101,33 @@ def build_train_dataset(pairs: list[tuple[str, str]]) -> Dataset:
 def top1_accuracy(model, kb=None):
     if kb:
         docs = [entry_to_text(e) for e in kb]
-    else:
-        from plant_doctor.rag.build_index import load_documents
+        if not docs:
+            return 1.0
+        doc_emb = model.encode(docs, normalize_embeddings=True, convert_to_tensor=True)
+        hits = total = 0
+        for i, e in enumerate(kb):
+            name_q, section_q = queries_for(e)
+            qs = list(name_q) + [q for q, _ in section_q]
+            if not qs:
+                continue
+            q_emb = model.encode(qs, normalize_embeddings=True, convert_to_tensor=True)
+            pred = (q_emb @ doc_emb.T).argmax(dim=1)
+            hits += int((pred == i).sum())
+            total += len(qs)
+        return (hits / total) if total > 0 else 1.0
 
-        docs = [d.page_content for d in load_documents()[:30]]
-    if not docs:
+    pairs = extract_pairs_from_markdown()
+    if not pairs:
         return 1.0
-    doc_emb = model.encode(docs, normalize_embeddings=True, convert_to_tensor=True)
-    hits = total = 0
-    for i, e in enumerate(kb):
-        name_q, section_q = queries_for(e)
-        qs = list(name_q) + [q for q, _ in section_q]
-        q_emb = model.encode(qs, normalize_embeddings=True, convert_to_tensor=True)
-        pred = (q_emb @ doc_emb.T).argmax(dim=1)
-        hits += int((pred == i).sum())
-        total += len(qs)
-    return hits / total
+    sample_pairs = pairs[:min(30, len(pairs))]
+    qs = [q for q, _ in sample_pairs]
+    passages = [p for _, p in sample_pairs]
+    q_emb = model.encode(qs, normalize_embeddings=True, convert_to_tensor=True)
+    p_emb = model.encode(passages, normalize_embeddings=True, convert_to_tensor=True)
+    sim = q_emb @ p_emb.T
+    target = torch.arange(sim.shape[0], device=sim.device)
+    hits = int((sim.argmax(dim=1) == target).sum())
+    return hits / sim.shape[0]
 
 
 def train_custom_embedding(
@@ -130,6 +141,10 @@ def train_custom_embedding(
     torch.manual_seed(SEED)
     kb = load_kb()
     pairs = build_pairs(kb)
+    if not pairs:
+        print("⚠️ Không tìm thấy cặp dữ liệu nào để huấn luyện Embedding.")
+        print("Vui lòng đặt tài liệu (.md, .pdf, .txt) vào data/knowledge_base/.")
+        return 1.0
     print(f"Số cặp huấn luyện: {len(pairs)}")
 
     model = SentenceTransformer(base_model)
