@@ -39,7 +39,7 @@ jobs:
         run: pytest -q
 
       - name: Hadolint (Dockerfile)
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.5.0
         with:
           dockerfile: Dockerfile
           ignore: DL3008,DL3013,DL3042  # không ghim phiên bản apt/pip
