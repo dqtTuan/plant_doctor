@@ -1,17 +1,14 @@
-"""Công cụ đánh giá chất lượng truy xuất RAG (hit@k, MRR, no-answer accuracy).
+"""Đánh giá truy xuất RAG end-to-end trên tập câu hỏi vàng (hit@k, MRR, no-answer accuracy).
 
-Cách dùng:
-python -m plant_doctor.rag.evaluate --golden data/eval/golden.jsonl --k 4
+    pd eval rag            # cấu hình: configs/rag.yaml
+    pd eval rag k=6
 """
-import argparse
 from dataclasses import dataclass, field
 import json
 from pathlib import Path
 from typing import Callable
 
 from langchain_core.documents import Document
-
-from plant_doctor.config import DATA_DIR
 
 
 @dataclass
@@ -93,40 +90,30 @@ def evaluate(
     }
 
 
-def main():
-    ap = argparse.ArgumentParser(description="Đánh giá chất lượng truy xuất RAG của Plant Doctor")
-    ap.add_argument("--golden", default=str(DATA_DIR / "eval" / "golden.jsonl"), help="Đường dẫn file golden jsonl")
-    ap.add_argument("--k", type=int, default=4, help="Số tài liệu truy xuất tối đa")
-    ap.add_argument("--json", dest="json_out", default=None, help="Đường dẫn file lưu kết quả JSON")
-    args = ap.parse_args()
+def run_rag_eval(cfg: dict) -> dict:
+    """Đánh giá pipeline truy xuất thật trên golden set, lưu kết quả vào runs/rag/<timestamp>/."""
+    from plant_doctor.utils.experiment import Run, metrics_table
 
-    items = load_golden(args.golden)
+    k = int(cfg.get("k", 4))
+    items = load_golden(cfg["golden"])
     if not items:
-        print(f"Chưa có dữ liệu kiểm thử tại: {args.golden}")
-        return
+        print(f"Chưa có dữ liệu kiểm thử tại: {cfg['golden']} (xem data/eval/README.md)")
+        return {}
 
-    from plant_doctor.pipeline import PlantDoctorPipeline
+    from plant_doctor.inference.pipeline import PlantDoctorPipeline
 
+    run = Run.create("rag", cfg)
     p = PlantDoctorPipeline(load_models=True)
-    metrics = evaluate(
-        lambda q, labels: p.retrieve_context(q, labels, max_docs=args.k),
-        items,
-        k=args.k,
-    )
+    metrics = evaluate(lambda q, labels: p.retrieve_context(q, labels, max_docs=k), items, k=k)
+    run.log_metrics(metrics)
+    run.write_report(f"# Đánh giá truy xuất RAG (k={k})\n\n"
+                     f"{len(items)} câu hỏi ({metrics['n_answerable']} có đáp án, "
+                     f"{metrics['n_unanswerable']} cần từ chối)\n\n{metrics_table(metrics)}\n")
+    run.finish()
 
     print("=" * 45)
-    print("      KẾT QUẢ ĐÁNH GIÁ TRUY XUẤT RAG         ")
-    print("=" * 45)
-    print(f"Tổng số mẫu: {len(items)} ({metrics['n_answerable']} có đáp án, {metrics['n_unanswerable']} từ chối)")
-    print(f"Hit@{args.k}        : {metrics['hit_at_k']:.2%}")
+    print(f"Hit@{k}        : {metrics['hit_at_k']:.2%}")
     print(f"MRR           : {metrics['mrr']:.4f}")
     print(f"No-Answer Acc : {metrics['no_answer_acc']:.2%}")
     print("=" * 45)
-
-    if args.json_out:
-        Path(args.json_out).write_text(json.dumps(metrics, indent=2), encoding="utf-8")
-        print(f"Đã lưu kết quả tại: {args.json_out}")
-
-
-if __name__ == "__main__":
-    main()
+    return metrics

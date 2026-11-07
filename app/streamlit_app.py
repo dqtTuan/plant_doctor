@@ -8,9 +8,9 @@ import torch
 from PIL import Image
 
 from plant_doctor.config import DEFAULT_MAX_CONTEXT_DOCS, DEFAULT_MAX_NEW_TOKENS
-from plant_doctor.knowledge import is_healthy
-from plant_doctor.pipeline import PlantDoctorPipeline
-from plant_doctor.prompts import build_messages, format_context
+from plant_doctor.inference.knowledge import is_healthy
+from plant_doctor.inference.pipeline import PlantDoctorPipeline
+from plant_doctor.inference.prompts import build_messages, format_context
 
 MEMORY_K = 3         # số lượt hội thoại gần nhất đưa vào prompt (window memory)
 MAX_CONTEXT_DOCS = DEFAULT_MAX_CONTEXT_DOCS
@@ -112,7 +112,7 @@ with st.sidebar:
         st.caption("Chưa có tài liệu nào. Hãy tải lên tài liệu PDF/MD thực tế của bạn!")
 
 if pipeline.yolo is None:
-    st.error("Không tìm thấy trọng số YOLO. Hãy chạy `python -m plant_doctor.training.train_yolo` trước.")
+    st.error("Không tìm thấy trọng số YOLO. Hãy chạy `pd train yolo` trước.")
     st.stop()
 
 st.session_state.setdefault("messages", [])
@@ -153,7 +153,7 @@ def answer(question: str) -> str:
         messages = build_messages(format_context(docs), question, history_pairs())
         text = st.write_stream(pipeline.stream_answer(messages, max_new_tokens=max_new_tokens))
 
-    from plant_doctor.prompts import extract_citations
+    from plant_doctor.inference.prompts import extract_citations
 
     answer_text = "".join(str(chunk) for chunk in text) if isinstance(text, list) else str(text or "")
     cited_indices = set(extract_citations(answer_text, len(docs)))

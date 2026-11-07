@@ -19,8 +19,8 @@ import torch
 from plant_doctor.config import (DEFAULT_MAX_CONTEXT_DOCS, DEFAULT_MAX_NEW_TOKENS,
                                  EMBED_DIR, FAISS_DIR, LLM_MERGED_DIR, PGVECTOR_TABLE,
                                  PGVECTOR_URL, RERANKER_DIR, RETRIEVE_CANDIDATES, YOLO_WEIGHTS)
-from plant_doctor.knowledge import entry_to_answer, entry_to_text, lookup
-from plant_doctor.prompts import format_context
+from plant_doctor.inference.knowledge import entry_to_answer, entry_to_text, lookup
+from plant_doctor.inference.prompts import format_context
 
 logger = logging.getLogger(__name__)
 

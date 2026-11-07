@@ -24,7 +24,7 @@ from plant_doctor.config import (
     PGVECTOR_URL,
     embed_max_tokens,
 )
-from plant_doctor.knowledge import load_kb
+from plant_doctor.inference.knowledge import load_kb
 from plant_doctor.rag.loaders import assign_chunk_uids, load_directory
 from plant_doctor.rag.semantic_chunking import (
     cap_chunks,
@@ -116,7 +116,7 @@ def build_vector_store(
     if not (embed_path / "config.json").exists() and not (embed_path / "modules.json").exists():
         raise SystemExit(
             f"Chưa có mô hình embedding tại {embed_path}. "
-            "Hãy chạy `python -m plant_doctor.training.train_embedding`"
+            "Hãy chạy `pd train embedding` trước."
         )
 
     embeddings = HuggingFaceEmbeddings(

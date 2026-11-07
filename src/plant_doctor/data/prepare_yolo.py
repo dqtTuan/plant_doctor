@@ -9,7 +9,7 @@ Vì ảnh không có bounding box, khung được sinh tự động bằng cách
 Nếu không tìm được lá, khung = toàn bộ ảnh.
 
 Ví dụ:
-  python -m plant_doctor.data.prepare_dataset --src data/raw --method opencv --max-per-class 400
+  pd data prepare-yolo --src data/raw --method opencv --max-per-class 400
 """
 import argparse
 import random

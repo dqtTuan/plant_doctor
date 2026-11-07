@@ -1,18 +1,23 @@
-"""Cấu hình đường dẫn & tên mô hình dùng chung cho toàn bộ pipeline.
+"""Đường dẫn & hằng số dùng chung (không phải siêu tham số huấn luyện – xem configs/*.yaml).
 
-Thư mục gốc dự án mặc định là thư mục chứa `pyproject.toml` (2 cấp trên `src/plant_doctor`).
+Thư mục gốc dự án mặc định là thư mục chứa `pyproject.toml` (3 cấp trên `src/plant_doctor/config`).
 Có thể ghi đè bằng biến môi trường `PLANT_DOCTOR_ROOT` (VD: khi chạy trên Colab/Drive).
 """
 import os
 from pathlib import Path
 
-ROOT = Path(os.environ.get("PLANT_DOCTOR_ROOT", Path(__file__).resolve().parents[2])).resolve()
+ROOT = Path(os.environ.get("PLANT_DOCTOR_ROOT", Path(__file__).resolve().parents[3])).resolve()
+
+# --- Cấu hình thí nghiệm & kết quả ---
+CONFIGS_DIR = ROOT / "configs"              # siêu tham số huấn luyện/đánh giá (YAML)
+RUNS_DIR = ROOT / "runs"                    # runs/<task>/<timestamp>/: config, metrics, báo cáo
 
 # --- Dữ liệu ---
 DATA_DIR = ROOT / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"             # data/raw/<ten_lop>/*.jpg (nhãn phân loại kiểu PlantVillage)
 DATASET_DIR = DATA_DIR / "yolo"             # dataset YOLO (sinh bởi bước 0 hoặc tải từ Roboflow)
 KB_DIR = DATA_DIR / "knowledge_base"        # tài liệu PDF/MD/TXT chuyên sâu nông nghiệp
+EVAL_DIR = DATA_DIR / "eval"                # tập đánh giá cố định (golden set RAG)
 
 TRAIN_DATA_DIR = DATA_DIR / "training"      # dữ liệu bổ sung (tuỳ chọn) cho embedding & LLM
 
